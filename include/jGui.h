@@ -32,32 +32,6 @@ struct _winlist winlist;
 extern struct _winlist winlist;
 #endif
 
-#ifndef CHECK_FUNCS
-#define CHEKC_FUNCS
-int check(long r, int sdl_error) {
-	if (r) {
-		if (sdl_error) {
-			fprintf(stderr, "Error: %s\n", SDL_GetError());
-		}
-		return TRUE;
-	}
-	return FALSE;
-}
-
-int check_p(void * point, int sdl_error) {
-	if (point == NULL) {
-		if (sdl_error) {
-			fprintf(stderr, "Error: %s\n", SDL_GetError());
-		}
-		return TRUE;
-	}
-	return FALSE;
-}
-#else
-int check(long r, int sdl_error);
-int check_p(void * point, int sdl_error);
-#endif
-
 // General Use
 int j_init(Uint32 flags);
 int j_mainloop();
