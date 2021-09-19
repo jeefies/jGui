@@ -8,6 +8,9 @@ Notice that it won't be perfect and it would have many issues
 ## Dependences
 It just requires `libSDL2`  
 Of course, `libSDL2-gfx libSDL2-mixer libSDL2-ttf` are also needed.  
+> At First, gfx, mixer are not used!
+
+
 ### Debian/Ubuntu
 `sudo apt install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev libsdl2-mixer-dev libsdl2-net-dev -y`  
 This can automatically download the stable development libs that can use when developing a project.  

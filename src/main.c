@@ -1,5 +1,7 @@
 #include <jGui.h>
 
+int _win_update_use_surface = 0;
+
 
 int j_init(Uint32 flags) {
 	if (check(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER | flags), 1)) exit(1);
@@ -10,12 +12,12 @@ int j_init(Uint32 flags) {
 void j_append_win(Window * win) {
 	winlist.size += 1;
 	winlist.wins = (Window **)realloc(winlist.wins, sizeof(Window *) * winlist.size);
-	win->id = winlist.size - 1;
+	// win->id = winlist.size - 1;
+	winlist.wins[(win->id = winlist.size - 1)] = win;
 }
 
 Window * j_create_window(char * title, int w, int h, Uint32 flags) {
 	Window * win = (Window *)malloc(sizeof(Window));
-	j_append_win(win);
 
 	if (check_p(win, 0)) {
 		perror("Could not create windows");
@@ -32,10 +34,8 @@ Window * j_create_window(char * title, int w, int h, Uint32 flags) {
 	win->scr = SDL_GetWindowSurface(win->win);
 	if (check_p(win->scr, 1)) exit(1);
 
-	SDL_SetRenderDrawColor(win->ren, 255, 0, 0, 255);
-	SDL_RenderFillRect(win->ren, NULL);
-	SDL_RenderPresent(win->ren);
-	
+	j_append_win(win);
+
 	return win;
 }
 
@@ -45,9 +45,31 @@ void j_close_window(Window * win) {
 }
 
 Uint32 _timer_present_renderer_for_time(Uint32 interval, void * data) {
+	static SDL_Texture * text = NULL;
 	for (int i = 0; i < winlist.size; i++) {
-		SDL_RenderPresent(winlist.wins[i]->ren);
-		printf("RenderPresent %d\n", i);
+		if (_win_update_use_surface) {
+			if (!text) printf("Update Window Surface\n");
+			SDL_Renderer * ren = winlist.wins[i] -> ren;
+
+			// j_draw_circle (winlist.wins[i]->scr, 100, 50, 40);
+
+			
+
+			if (!text) {
+				text = SDL_CreateTextureFromSurface(ren, winlist.wins[i]->scr);
+				while (!text) {
+					text = SDL_CreateTextureFromSurface(ren, winlist.wins[i]->scr);
+					printf("... %s\n", SDL_GetError());
+				}
+			}
+
+			SDL_RenderCopy(ren, text, NULL, NULL);
+			SDL_RenderPresent(ren);
+
+			SDL_DestroyTexture(text);
+		} else {
+			SDL_RenderPresent(winlist.wins[i]->ren);
+		}
 	}
 	return interval;
 }
@@ -70,7 +92,7 @@ int j_drawrect_centered(SDL_Surface * sur, int x, int y, int r, Uint32 color) {
 	for (int i = y - r; i < y + r; i++) {
 		for (int j = x - r; j < x + r; j++) {
 			pixels[i * ppr + j] = color;
-			printf("set (%d, %d)\n", i, j);
+			// printf("set (%d, %d)\n", i, j);
 		}
 	}
 }
@@ -86,12 +108,12 @@ int j_drawrect_centered2(SDL_Surface * sur, int x, int y, int r, Uint32 color) {
 	for (int i = y - r; i < y + r + 1; i++) {
 		for (int j = x - r; j < x + r + 1; j++) {
 			pixels[i * ppr + j] = color;
-			printf("set (%d, %d)\n", i, j);
+			// printf("set (%d, %d)\n", i, j);
 		}
 	}
 }
 
-int draw_circle(SDL_Surface * sur, int cx, int cy, int r) {
+int j_draw_circle(SDL_Surface * sur, int cx, int cy, int r, Uint32 color) {
 	Uint32 * pixels = (Uint32 *) sur->pixels;
 
 	int ppr = sur->pitch / sur->format->BytesPerPixel;
@@ -104,7 +126,7 @@ int draw_circle(SDL_Surface * sur, int cx, int cy, int r) {
 
 	while (p.y >= 0) {
 		pxy = (r - p.x) * (r - p.x) + (r - p.y) * (r -p.y);
-		printf("pxy is %d\n", pxy);
+		// printf("pxy is %d\n", pxy);
 
 		if (pxy <= pr) {
 			ps[count] = p;
@@ -113,19 +135,24 @@ int draw_circle(SDL_Surface * sur, int cx, int cy, int r) {
 			ps = (Point *)realloc(ps, sizeof(Point) * size);
 
 			p.y -= 1;
-			printf("so y - 1, now x, y = %d, %d\n", p.x, p.y);
+			// printf("so y - 1, now x, y = %d, %d\n", p.x, p.y);
 		} else {
 			p.x += 1;
-			printf("so x + 1, now x, y = %d, %d\n", p.x, p.y);
+			// printf("so x + 1, now x, y = %d, %d\n", p.x, p.y);
 		}
 	}
 
 	for (int i = 0; i < count; i++) {
 		Point ip = ps[i];
-		printf("x, y = %d, %d\n", ip.x, ip.y);
+		// printf("x, y = %d, %d\n", ip.x, ip.y);
 
 		for (int j = ip.x; j < r; j++) {
-			pixels [cx - r + j + (cy - r + ip.y) * ppr] = 0xff0000;
+			// printf("%d %d %d %d\n", cx - r + j, cx + r - j, cy - r + ip.y, cy + r - ip.y - 1);
+			pixels [cx - r + j + (cy - r + ip.y) * ppr] = color;
+			pixels [cx + r - j - 1 + (cy - r + ip.y) * ppr] = color;
+
+			pixels [cx - r + j + (cy + r - ip.y - 1) * ppr] = color;
+			pixels [cx + r - j - 1 + (cy + r - ip.y - 1) * ppr] = color;
 		}
 	}
 
@@ -151,10 +178,30 @@ int j_mainloop() {
 	return 1;
 }
 
+int j_update_method(int flags) {
+	_win_update_use_surface = flags;
+
+	/*
+	if (_win_update_use_surface) {
+		for (int i = 0; i < winlist.size; i++) {
+			SDL_FillRect(winlist.wins[i]->scr, NULL, 0);
+		}
+	}
+	*/
+	return flags;
+}
+
 int main(int argc, char * argv[]) {
 	j_init(0);
 	Window * win = j_create_window("Hello J_Gui", 200, 200, WIN_BORDERLESS);
 
+	j_update_method(UPDATE_BY_SURFACE);
+
+	SDL_Rect r = {1, 1, 5, 5};
+	SDL_FillRect(win->scr, &r, 0xff00ff);
+	j_draw_circle (win->scr, 100, 100, 100, 0xff0000);
+
+	printf("Mainloop start!");
 
 	j_mainloop();
 __quit:

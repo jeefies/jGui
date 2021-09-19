@@ -61,6 +61,9 @@ int check_p(void * point, int sdl_error);
 // General Use
 int j_init(Uint32 flags);
 int j_mainloop();
+int j_update_method(int flags);
+#define UPDATE_BY_RENDERER 0
+#define UPDATE_BY_SURFACE 1
 
 // For Generating Windows
 Window * j_create_window(char * title, int w, int h, Uint32 flags);
@@ -73,4 +76,4 @@ int j_drawrect_centered(SDL_Surface *, int, int, int, Uint32);
 int j_drawrect_centered2(SDL_Surface *, int, int, int, Uint32);
 
 // Circles
-int j_draw_circle(SDL_Surface * sur, int cx, int cy, int r);
+int j_draw_circle(SDL_Surface * sur, int cx, int cy, int r, Uint32 color);
