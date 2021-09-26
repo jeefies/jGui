@@ -1,4 +1,10 @@
-#include <jGui.h>
+#include <SDL2/SDL.h>
+
+struct Point {
+	int x;
+	int y;
+};
+typedef struct Point Point;
 
 int j_drawrect_centered(SDL_Surface * sur, int x, int y, int r, Uint32 color) {
 	// Not Draw Circle, but a rectangle, x, y is the center of the rect, r is half of the width
@@ -21,6 +27,8 @@ int j_drawrect_centered(SDL_Surface * sur, int x, int y, int r, Uint32 color) {
 			// printf("set (%d, %d)\n", i, j);
 		}
 	}
+
+	return 0;
 }
 
 int j_drawrect_centered2(SDL_Surface * sur, int x, int y, int r, Uint32 color) {

@@ -1,6 +1,10 @@
 bin
+pkg
+tmp
+include
 
 *.o
+*.a
 *.so
 
 *.swp
