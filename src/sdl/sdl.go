@@ -1,3 +1,10 @@
+/*
+Package sdl: The interface of libsdl
+Author: Jeefy
+Package url: 
+	Newest is not seperated to a singular package, old is in "https://github.com/jeefies/study/tree/master/go/go-sdl".
+	And now its newest version is in "https://gitee.com/jeefy/jgui/tree/master/src/sdl" or "https://github.com/jeefies/jGui/tree/master/src/sdl"
+*/
 package sdl
 
 /*
@@ -6,6 +13,7 @@ package sdl
 import "C"
 
 const (
+	// The constants of INIT method
 	INIT_TIMER uint32	= 0x000000001
 	INIT_AUDIO uint32	= 0x000000010
 	INIT_VIDEO uint32	= 0x000000020
@@ -18,6 +26,8 @@ const (
 	INIT_DEFAULT uint32	= (INIT_TIMER | INIT_AUDIO | INIT_VIDEO | INIT_EVENTS)
 )
 
+// Returns a SDLError if could not init success
+// It's the interface of SDL_Init
 func Init(flags uint32) error {
 	if (C.SDL_Init(C.Uint32(flags)) != 0) {
 		return NewSDLError("Could Not Init SDL")
@@ -25,6 +35,7 @@ func Init(flags uint32) error {
 	return nil
 }
 
+// The interface of SDL_Quit
 func Quit() {
 	C.SDL_Quit()
 }
