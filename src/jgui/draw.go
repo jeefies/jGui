@@ -8,8 +8,14 @@ int j_drawrect_centered2(SDL_Surface * sur, int x, int y, int r, Uint32 c);
 int j_draw_circle(SDL_Surface * sur, int x, int y, int r, Uint32 c);
 */
 import "C"
+import "sdl"
 
 import "unsafe"
+
+func (win * Window) DrawRect(x1, y1, x2, y2 int, color uint32) {
+	rect := sdl.NewRect(x1, y1, x2 - x1, y2 - y1)
+	win.scr().FillRect(rect, color)
+}
 
 func (win * Window) DrawRectCentered(x, y, r int, color uint32) {
 	var cx, cy, cr C.int = C.int(x), C.int(y), C.int(r)

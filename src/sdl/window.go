@@ -15,6 +15,8 @@ int isNull(void * p) {
  */
 import "C"
 
+import "fmt"
+
 // const for window's postion (when creating)
 const (
 	WINPOS_CENTERED = int(C.SDL_WINDOWPOS_CENTERED_MASK)
@@ -45,6 +47,9 @@ func CreateWindowWithFlags(title string, w, h, x, y int, flags uint32) (win *Win
 	if (C.isNull(unsafe.Pointer(win)) == 1) {
 		err = NewSDLError("Could Not Create Window")
 	}
+
+	// fmt.Printf("max w, h: %d %d\n", mw, mh)
+
 	return
 }
 
@@ -56,6 +61,39 @@ func (win * Window) GetSurface() (*Surface) {
 	return C.SDL_GetWindowSurface(win)
 }
 
+// GetMaxSize returns two integer means the Screen size (width, height)
+func (win * Window) GetMaxSize() (w, h int) {
+	/*
+	var cw, ch C.int = 0, 0
+	C.SDL_GetWindowMaximumSize(win, &cw, &ch)
+	w, h = int(cw), int(ch)
+	*/
+	current := new(C.SDL_DisplayMode)
+	// for i := 0; i < int(C.SDL_GetNumVideoDisplays()); i++ {
+	if i := int(C.SDL_GetNumVideoDisplays()); i == 1 {
+		err := int(C.SDL_GetCurrentDisplayMode(0, current))
+		if (err != 0) {
+			panic("Error")
+		}
+		// fmt.Printf("Display W, H: %d %d\n", current.w, current.h)
+		w, h = int(current.w), int(current.h)
+	}
+	return
+}
+
+// GetDesktopSize returns nil but print out all the info
+// That means this is just a development function should not be used
+func (win * Window) GetDesktopSize() {
+	current := new(C.SDL_DisplayMode)
+	for i := 0; i < int(C.SDL_GetNumVideoDisplays()); i++ {
+		err := int(C.SDL_GetCurrentDisplayMode(C.int(i), current))
+		if (err != 0) {
+			panic("Error")
+		}
+		fmt.Printf("Display W, H: %d %d\n", current.w, current.h)
+	}
+}
+
 func (win * Window) GetSize() (w, h int) {
 	var cw, ch C.int = 0, 0
 	C.SDL_GetWindowSize(win, &cw, &ch)
@@ -65,4 +103,10 @@ func (win * Window) GetSize() (w, h int) {
 
 func (win * Window) UpdateSurface() {
 	C.SDL_UpdateWindowSurface(win)
+}
+
+// Id returns the id of the window.
+// Can use the id to get the instance of the window
+func (win * Window) Id() uint32 {
+	return uint32(C.SDL_GetWindowID(win))
 }

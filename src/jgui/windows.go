@@ -5,6 +5,7 @@ import (
 )
 
 import "sdl"
+import "fmt"
 
 var winlist = make([](* Window), 0)
 // 0 for surface, 1 for renderer
@@ -30,21 +31,24 @@ func CreateWindow(title string, w, h int, flags uint32) (win * Window) {
 
 	win._scr = win.win.GetSurface()
 
+	mw, mh := win.win.GetMaxSize()
+	fmt.Printf("Max w h: %d %d\n", mw, mh)
+
 	return
 }
 
+// scr returns a Screen instance for the window instance.
 func (win * Window) scr() (*Screen) {
 	now_scr := win.win.GetSurface()
 	if now_scr == win._scr {
 		return now_scr
 	}
 
+	print("Screen changed")
+
 	/*
-	Notice that the surface pointer would be changed
-	when resizing the Window.
-	This is the function to make sure the old content
-	would be copied to new screen.
-	Depends on the smaller screen size (big -> small, small not change)
+	This is just the function to make sure if the screen instance wouldn't be changed
+	but when resizing the window, all the pixels would be written to 0 (black)
 	*/
 
 	min := func(x, y int) int {
@@ -87,10 +91,21 @@ func (win * Window) GetScreen() (* Screen) {
 	return win.scr()
 }
 
-// Get the id of the window.
+// Get the id of the window (in jgui).
 // Id might not use, but to get the window instance by id
 func (win * Window) GetId() uint32 {
 	return win.id
+}
+
+// GetSDLId returns the id of the window in sdl
+// It's not equal to GetId method
+func (win * Window) GetSDLId() uint32 {
+	return win.win.Id()
+}
+
+// handleWindowEvent handles the windows event like resizing the size
+func (win * Window) handleWindowEvent(etype uint32) {
+	// NOT COMPLETE NOW
 }
 
 // Use native interface of SDL_UpdateWindowSurface to update the window
@@ -133,18 +148,19 @@ func updateWindows() {
 		for _, w := range winlist {
 			go func(win *Window, wg *sync.WaitGroup) {
 				win.UpdateSurface()
+				wg.Done()
 			}(w, &wg)
 		}
 	} else if updateWindowMethod == 1 {
 		for _, w := range winlist {
 			go func(win *Window, wg *sync.WaitGroup) {
 				win.Update()
+				wg.Done()
 			}(w, &wg)
 		}
 	}
 
 	wg.Wait()
-	print("Update +1  ")
 }
 
 func updateWindows_timerfunc(interval uint32, param interface {}) uint32 {

@@ -1,24 +1,13 @@
 package main
 
 import (
-	_ "os"
-	_ "strconv"
-	_ "math/rand"
 	_ "time"
 )
 
 import "jgui"
 
-const sqrL int = 12
-const (
-	LEFT = -2
-	RIGHT = 2
-	UP = -1
-	DOWN = 1
-)
-
 func main() {
-	jgui.Init()
+	// jgui.Init() Move into init() function in private package
 
 	win := jgui.CreateWindow("Hello J_Gui", 200, 200, jgui.WIN_SHOWN)
 
@@ -27,6 +16,8 @@ func main() {
 	win.Update()
 
 	jgui.UpdateMethod(jgui.UPDATE_BY_SURFACE)
+
+	win.DrawRect(0, 0, 1, 1, 0xffffff)
 
 	/*
 	r := jgui.NewRect(1, 1, 5, 5)

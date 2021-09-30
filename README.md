@@ -1,6 +1,10 @@
 # JGui
 **A tiny gui depends on libSDL2**
 
+## Language
+I want it to be C at first, but I find it difficult to develop this in C  
+So Now it changes into golang, and will keep on developing with golang
+
 ## Purpose
 To make a simple gui for myself use (to replace tkinter, gtk or qt)  
 Notice that it won't be perfect and it would have many issues

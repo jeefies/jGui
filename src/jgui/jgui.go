@@ -2,6 +2,10 @@ package jgui
 
 import "sdl"
 
+func init() {
+	Init()
+}
+
 func Init() {
 	sdl.Init(sdl.INIT_DEFAULT)
 }
@@ -34,7 +38,14 @@ func Mainloop() {
 			case sdl.KEYDOWN:
 				switch e.Key() {
 				case 'w':
-					winlist[0].DrawRectCentered(30, 30, 5, 0x0f0f05)
+					winlist[0].DrawRectCentered(30, 30, 5, 0xff)
+				}
+			case sdl.WINDOWS_EVENT:
+				for _, w := range winlist {
+					if w.GetSDLId() == e.WinId() {
+						w.handleWindowEvent(e.WinEvent())
+						break
+					}
 				}
 			}
 		}
