@@ -16,6 +16,8 @@ const (
 var updateWindowMethod int = 0
 
 
+// CreateWindow returns a Window instance
+// give title string, width, heigth int, flags uint32
 func CreateWindow(title string, w, h int, flags uint32) (win * Window) {
     var err error
     win = new(Window)
@@ -40,6 +42,15 @@ func CreateWindow(title string, w, h int, flags uint32) (win * Window) {
     win.sid = win.win.Id()
 
     return
+}
+
+// GetWinById returns a Window instance by Id
+func GetWinById(id uint32) (*Window) {
+	if id < uint32(len(winlist)) {
+		return winlist[int(id)]
+	}
+	panic(NewError("Could Not Get Window By these Id"))
+	return nil
 }
 
 // scr returns a Screen instance for the window instance.

@@ -18,13 +18,16 @@ func main() {
 	jgui.UpdateMethod(jgui.UPDATE_BY_SURFACE)
 
 	win.DrawRect(0, 0, 1, 1, 0xffffff)
+	btn := jgui.NewButton(50, 50, 100, 30, "Button")
+
+	btn.Pack(win)
 
 	/*
 	r := jgui.NewRect(1, 1, 5, 5)
 	jgui.FillRect(win, r, 0xff00ff)
 	*/
 
-	win.DrawCircle(100, 100, 100, 0xff0000)
+	// win.DrawCircle(100, 100, 100, 0xff0000)
 
 	print("Mainloop start!\n")
 

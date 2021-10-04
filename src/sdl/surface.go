@@ -77,3 +77,7 @@ func CreateSurface(width, height int) (*Surface, error) {
     }
     return sur, nil
 }
+
+func (sur * Surface) ToTexture(ren * Renderer) (*Texture, error) {
+	return ren.CreateTextureFromSurface(sur)
+}

@@ -20,3 +20,8 @@ Of course, `libSDL2-gfx libSDL2-mixer libSDL2-ttf` are also needed.
 This can automatically download the stable development libs that can use when developing a project.  
 ### Windows
 See the website of libsdl to find the way to build the dependences.  
+
+## Notice
+***We don't use go mod in this package (that means need to turn off GO111MODULE)***  
+> type `go env -w GO111MODULE='off'` to turn it off  
+**Maybe when the project is fully developed, i'll change it into newest go mod**

@@ -1,10 +1,19 @@
 #include <SDL2/SDL.h>
 
+/*
+ * Pre-Read Part:
+ * If there's segmentation fault, check the width and height of the surface first.
+ */
+
 struct Point {
 	int x;
 	int y;
 };
 typedef struct Point Point;
+
+int get_place(int ppr, int x, int y) {
+	return y * ppr + x;
+}
 
 int j_drawrect_centered(SDL_Surface * sur, int x, int y, int r, Uint32 color) {
 	// Not Draw Circle, but a rectangle, x, y is the center of the rect, r is half of the width
@@ -87,6 +96,30 @@ int j_draw_circle(SDL_Surface * sur, int cx, int cy, int r, Uint32 color) {
 
 			pixels [cx - r + j + (cy + r - ip.y - 1) * ppr] = color;
 			pixels [cx + r - j - 1 + (cy + r - ip.y - 1) * ppr] = color;
+		}
+	}
+
+	return 0;
+}
+
+int j_drawrect_border(SDL_Surface * sur, int x, int y, int xw, int yh, int width, Uint32 color) {
+	Uint32 * pixels = (Uint32 *) sur->pixels;
+
+	int ppr = sur->pitch / sur->format->BytesPerPixel;
+
+	// Draw line right and left
+	for (int i = 0; i < yh - y; i++) {
+		for (int j = 0; j < width; j++) {
+			pixels[get_place(ppr, x + j, y + i)] = color;
+			pixels[get_place(ppr, xw - j, y + i)] = color;
+		}
+	}
+
+	// Draw line up and down
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < yh - y + 1; j++) {
+			pixels[get_place(ppr, x + j, y + i)] = color;
+			pixels[get_place(ppr, x + j, yh - i)] = color;
 		}
 	}
 

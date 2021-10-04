@@ -1,3 +1,7 @@
+/*
+About The Code in C. See draw.c
+Provide the Interface of drawing shapes
+*/
 package jgui
 
 /*
@@ -6,6 +10,7 @@ package jgui
 int j_drawrect_centered(SDL_Surface * sur, int x, int y, int r, Uint32 c);
 int j_drawrect_centered2(SDL_Surface * sur, int x, int y, int r, Uint32 c);
 int j_draw_circle(SDL_Surface * sur, int x, int y, int r, Uint32 c);
+int j_drawrect_border(SDL_Surface * sur, int x, int y, int xw, int yh, int width, Uint32 color);
 */
 import "C"
 import "sdl"
@@ -29,6 +34,13 @@ func (win * Window) DrawRectCentered2(x, y, r int, color uint32) {
 	var ccolor C.Uint32 = C.Uint32(color)
 
 	C.j_drawrect_centered2((*C.SDL_Surface)(unsafe.Pointer(win._scr)), cx, cy, cr, ccolor)
+}
+
+func (win * Window) DrawRectBorder(x1, y1, x2, y2, width int, color uint32) {
+	var a, b, c, d, w = C.int(x1), C.int(y1), C.int(x2), C.int(y2), C.int(width)
+	var ccolor = C.Uint32(color)
+
+	C.j_drawrect_border((*C.SDL_Surface)(unsafe.Pointer(win._scr)), a, b, c, d, w, ccolor)
 }
 
 func (win * Window) DrawCircle(x, y, r int, color uint32) {
