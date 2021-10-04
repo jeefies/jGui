@@ -11,4 +11,5 @@ type Window struct {
 	_scr * sdl.Surface // scr would change to private function
 
 	id uint32
+	sid uint32
 }

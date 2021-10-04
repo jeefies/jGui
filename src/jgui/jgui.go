@@ -42,7 +42,7 @@ func Mainloop() {
 				}
 			case sdl.WINDOWS_EVENT:
 				for _, w := range winlist {
-					if w.GetSDLId() == e.WinId() {
+					if w.sid == e.WinId() {
 						w.handleWindowEvent(e.WinEvent())
 						break
 					}
