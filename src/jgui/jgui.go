@@ -63,6 +63,12 @@ func Mainloop() {
 						break
 					}
 				}
+            default:
+                for _, w := range winlist {
+                    if w.sid == e.WinId() {
+                        w.handleEvent(e)
+                    }
+                }
 			}
 		}
 	}

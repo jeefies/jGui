@@ -18,6 +18,11 @@ Uint32 getWinId(SDL_Event * e) {
 Uint32 getWinEType(SDL_Event * e) {
 	return e->window.event;
 }
+
+void getMousePositon(SDL_Event * e, int * x, int * y) {
+    *x = e->motion.x;
+    *y = e->motion.y;
+}
 */
 import "C"
 
@@ -43,6 +48,12 @@ const (
 	WINDOW_FOCUS_GAINED uint32 = uint32(C.SDL_WINDOWEVENT_FOCUS_GAINED)
 	WINDOW_FOCUS_LOST uint32 = uint32(C.SDL_WINDOWEVENT_FOCUS_LOST)
 	WINDOW_CLOSE uint32 = uint32(C.SDL_WINDOWEVENT_CLOSE)
+
+    // Type of MOUSE EVENT
+    MOUSE_MOTION uint32 = uint32(C.SDL_MOUSEMOTION)
+    MOUSE_DOWN uint32 = uint32(C.SDL_MOUSEBUTTONDOWN)
+    MOUSE_UP uint32 = uint32(C.SDL_MOUSEBUTTONUP)
+    MOUSE_WHEEL uint32 = uint32(C.SDL_MOUSEWHEEL)
 
 	// Special keys
 	KLEFT uint32 = uint32(C.SDLK_LEFT)
@@ -94,4 +105,11 @@ func (e *Event) WinId() (uint32) {
 // The sub type of the window event
 func (e *Event) WinEvent() (uint32) {
 	return uint32(C.getWinEType(e))
+}
+
+// Returns the relative position of the window
+func (e *Event) MousePosition() (int, int) {
+    var x, y C.int
+    C.getMousePositon(e, &x, &y)
+    return int(x), int(y)
 }

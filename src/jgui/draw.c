@@ -117,7 +117,7 @@ int j_drawrect_border(SDL_Surface * sur, int x, int y, int xw, int yh, int width
 
 	// Draw line up and down
 	for (int i = 0; i < width; i++) {
-		for (int j = 0; j < yh - y + 1; j++) {
+		for (int j = 0; j < xw - x + 1; j++) {
 			pixels[get_place(ppr, x + j, y + i)] = color;
 			pixels[get_place(ppr, x + j, yh - i)] = color;
 		}

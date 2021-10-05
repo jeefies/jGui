@@ -10,6 +10,9 @@ type Window struct {
 	ren * sdl.Renderer
 	_scr * sdl.Surface // scr would change to private function
 
+	childs []Widgets
+    current_widget Widgets
+
 	id uint32
 	sid uint32
 }

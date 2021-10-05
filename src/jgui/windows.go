@@ -41,6 +41,9 @@ func CreateWindow(title string, w, h int, flags uint32) (win * Window) {
 
     win.sid = win.win.Id()
 
+    win.childs = make([]Widgets, 0, 5)
+    win.current_widget = nil
+
     return
 }
 
@@ -97,7 +100,44 @@ func (win * Window) GetSDLId() uint32 {
 
 // handleWindowEvent handles the windows event like resizing the size
 func (win * Window) handleWindowEvent(etype uint32) {
-    // NOT COMPLETE NOW
+    // TODO: Window handleWindowEvent NOT COMPLETE NOW
+}
+
+// handleEvent handles all event of the window
+func (win * Window) handleEvent(e * sdl.Event) {
+    switch e.Type() {
+        case sdl.WINDOWS_EVENT:
+            win.handleWindowEvent(e.Type())
+        case sdl.MOUSE_MOTION:
+            x, y := e.MousePosition()
+            if (win.current_widget == nil) {
+                for _, w := range win.childs {
+                    if w.IsIn(x, y) {
+                        win.current_widget = w
+                        w.Call("active")
+                        break
+                    }
+                }
+            } else {
+                w := win.current_widget
+                if w.IsIn(x, y) {
+                    w.Call("mouse move")
+                } else {
+                    w.Call("deactive")
+
+                    win.current_widget = nil
+                    for _, w := range win.childs {
+                        if w.IsIn(x, y) {
+                            win.current_widget = w
+                            w.Call("active")
+                            break
+                        }
+                    }
+                }
+            }
+        default:
+            // TODO: Other SDL Events here
+    }
 }
 
 // Use native interface of SDL_UpdateWindowSurface to update the window
