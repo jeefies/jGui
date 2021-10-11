@@ -1,6 +1,13 @@
 package jgui
 
-import "sdl"
+import (
+    _ "log"
+    _ "sync/atomic"
+
+    "sdl"
+)
+
+var FPS uint32 = 35
 
 func init() {
 	Init()
@@ -11,6 +18,7 @@ func Init() {
 }
 
 func Quit() {
+    print("jgui Quit\n")
 	sdl.Quit()
 }
 
@@ -42,34 +50,57 @@ func Delay(ms uint32) {
 
 func Mainloop() {
 	_update_func_id := new(sdl.TimerID)
-	go sdl.AddTimer(1000/24, updateWindows_timerfunc, nil, _update_func_id)
-	defer sdl.RemoveTimer(_update_func_id)
+	go sdl.AddTimer(1000/FPS, updateWindows_timerfunc, nil, _update_func_id)
+    defer sdl.RemoveTimer(_update_func_id)
 
-	e := sdl.NewEvent()
-	for {
-		for e.Poll() {
-			switch e.Type() {
-			case sdl.QUIT:
-				return
-			case sdl.KEYDOWN:
-				switch e.Key() {
-				case 'w':
-					winlist[0].DrawRectCentered(30, 30, 5, 0xff)
-				}
-			case sdl.WINDOWS_EVENT:
-				for _, w := range winlist {
-					if w.sid == e.WinId() {
-						w.handleWindowEvent(e.WinEvent())
-						break
-					}
-				}
-            default:
-                for _, w := range winlist {
-                    if w.sid == e.WinId() {
-                        w.handleEvent(e)
+    done := make(chan bool)
+
+    go func() {
+        var ev *sdl.Event
+        var c int
+        var avaliable bool = true
+        for {
+            ev, c, avaliable = PollEvent()
+            if avaliable {
+                // Print("Go func\n")
+                go func(e *sdl.Event, i int) {
+                    defer CloseEvent(i)
+                    switch e.Type() {
+                        case sdl.QUIT:
+                            done <- true
+                            return
+                        case sdl.WINDOWS_EVENT:
+                            for _, w := range winlist {
+                                if w.sid == e.WinId() {
+                                    w.handleWindowEvent(e.WinEvent())
+                                    break
+                                }
+                            }
+                        default:
+                            for _, w := range winlist {
+                                if w.sid == e.WinId() {
+                                    w.handleEvent(e)
+                                    // logger.Print("still ok\n")
+                                    break
+                                }
+                            }
                     }
-                }
-			}
-		}
-	}
+                }(ev, c)
+            } else {
+                CloseEvent(c)
+                Delay(1000/FPS)
+            }
+        }
+    }()
+
+    for {
+        select {
+            case <-done:
+                return
+            default:
+                // logger.Println("flushing")
+                flushOut()
+                // logger.Println("flushing ok")
+        }
+    }
 }

@@ -42,6 +42,9 @@ type Button struct {
     text_size int
     text_color Color
     active_bg, active_fg Color
+
+    // event's functions
+    onclick func(*Button)
 }
 
 var default_font * ttf.Font

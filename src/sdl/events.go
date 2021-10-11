@@ -11,6 +11,12 @@ Uint32 getKey(SDL_Event * e) {
     return e->key.keysym.sym;
 }
 
+
+// It's unable to use unicode in SDL2 (but can if in SDL1.2)
+// Uint32  getKeyUCode(SDL_Event * e) {
+//      return e->key.keysym.unicode;
+// }
+
 Uint32 getWinId(SDL_Event * e) {
 	return e->window.windowID;
 }
@@ -72,18 +78,35 @@ const (
 	KDEL uint32 = uint32(C.SDLK_DELETE)
 )
 
+var mx, my int
+
+func init() {
+    // enables unicode translation for event (only in SDL1.2)
+    // C.SDL_EnableUNICODE(1)
+}
+
 // Create an Event instance (a pointer)
 func NewEvent() (*Event) {
 	return &Event{}
 }
 
 // Poll a event from sdl events list
-// if true is returned, there's still another event waiting for you!
+// if true is returned, means the event is avaliable
 func (e *Event) Poll() bool {
 	if (C.SDL_PollEvent(e) != C.int(0)) {
 		return true
 	}
+
+	if e.Type() == MOUSE_MOTION {
+        mx, my = e.MousePosition()
+    }
+
 	return false
+}
+
+// It's a function like Poll but it would wait until a new event appear
+func (e *Event) WaitPoll() {
+    C.SDL_WaitEvent(e)
 }
 
 // Type returns the type of the event.
@@ -96,6 +119,11 @@ func (e *Event) Type() (uint32) {
 func (e *Event) Key() (uint32) {
 	return uint32(C.getKey(e))
 }
+
+// KeyCode returns the translated unicode character by sdl (only in 1.2)
+// func (e *Event) KeyCode() (rune) {
+//     return rune(C.getKeyUCode())
+// }
 
 // WinId returns the windows id in sdl if the event type is window event
 func (e *Event) WinId() (uint32) {
@@ -112,4 +140,8 @@ func (e *Event) MousePosition() (int, int) {
     var x, y C.int
     C.getMousePositon(e, &x, &y)
     return int(x), int(y)
+}
+
+func GetMousePosition() (int,  int) {
+    return mx, my
 }

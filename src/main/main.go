@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "time"
+    _ "log"
 )
 
 import "jgui"
@@ -21,6 +21,10 @@ func main() {
 	btn := jgui.NewButton(50, 50, 100, 30, "Button")
 
 	btn.Pack(win)
+
+    btn.RegistEvent("mouse up", func(wg jgui.Widgets) {
+       jgui.Print("mouse up\n")
+    })
 
 	/*
 	r := jgui.NewRect(1, 1, 5, 5)

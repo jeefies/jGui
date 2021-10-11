@@ -2,7 +2,6 @@ package jgui
 
 import (
     "sync"
-    "fmt"
 )
 
 import "sdl"
@@ -33,7 +32,7 @@ func CreateWindow(title string, w, h int, flags uint32) (win * Window) {
 
 
     mw, mh := win.win.GetMaxSize()
-    fmt.Printf("Max w h: %d %d\n", mw, mh)
+    logger.Printf("Max w h: %d %d\n", mw, mh)
 
     // win._scr = win.win.GetSurface()
     win._scr, err = sdl.CreateSurface(mw, mh)
@@ -115,15 +114,17 @@ func (win * Window) handleEvent(e * sdl.Event) {
                     if w.IsIn(x, y) {
                         win.current_widget = w
                         w.Call("active")
+                        logger.Printf("Active at %d %d\n", x, y)
                         break
                     }
                 }
             } else {
-                w := win.current_widget
-                if w.IsIn(x, y) {
-                    w.Call("mouse move")
+                cw := win.current_widget
+                if cw.IsIn(x, y) {
+                    cw.Call("mouse move")
                 } else {
-                    w.Call("deactive")
+                    logger.Printf("Deactive at %d %d\n", x, y)
+                    cw.Call("deactive")
 
                     win.current_widget = nil
                     for _, w := range win.childs {
@@ -134,6 +135,27 @@ func (win * Window) handleEvent(e * sdl.Event) {
                         }
                     }
                 }
+            }
+        case sdl.MOUSE_DOWN:
+            if (win.current_widget == nil) {
+                // TODO: win on click event
+            } else {
+                win.current_widget.Call("mouse down")
+            }
+        case sdl.MOUSE_UP:
+            if (win.current_widget == nil) {
+                // TODO: win click event
+            } else {
+                win.current_widget.Call("mouse up")
+                logger.Print("Call mouse up ok")
+            }
+        case sdl.KEYDOWN:
+            k := e.Key()
+            Printf("Get Key %c\n", byte(k))
+            if (win.current_widget == nil) {
+                // TODO: win keydown Events
+            } else {
+                // win.current_widget.Call()
             }
         default:
             // TODO: Other SDL Events here
