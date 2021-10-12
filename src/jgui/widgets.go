@@ -6,8 +6,6 @@ A file for all widgets like Button or Label
 */
 
 import (
-    _ "fmt"
-
     "sdl"
     "sdl/ttf"
 )
@@ -26,9 +24,15 @@ type Widgets interface {
     Pack(win * Window)
     // state can be define as your own, but 0 always stands for default state
     Draw(state int)
+    // A function to change the position of the widget
+    MoveTo(x, y int)
+    // A function to set the width and the height
+    SetSize(w, h int)
+    // A function to get the size of the widget
+    GetSize() (int, int)
 }
 
-type Button struct {
+type Widget struct {
     childs []Widgets
     parent Widgets
 
@@ -37,7 +41,18 @@ type Button struct {
 
     win_id uint32
     events map[string]func(Widgets)
+}
 
+type Label struct {
+    *Widget
+    text string
+    // fg is the text color, default to white
+    // bg is the background color, default to black
+}
+
+
+type Button struct {
+    *Widget
     text string
     text_size int
     text_color Color
@@ -57,32 +72,43 @@ func init() {
     }
 }
 
-func (btn * Button) IsIn(x, y int) bool {
+// to check it the position (x, y) is in the area of the widget
+func (wg * Widget) IsIn(x, y int) bool {
     // Check if it's not in
-    if (btn.x >= x) || (x >= btn.x + btn.w) || (btn.y >= y) || (y >= btn.y + btn.h) {
+    if (wg.x >= x) || (x >= wg.x + wg.w) || (wg.y >= y) || (y >= wg.y + wg.h) {
         return false
     } else {
         return true
     }
 }
 
-func (btn * Button) RegistEvent(evtName string, f func(Widgets)) {
-    btn.events[evtName] = f
+// Regist a Event's function by the name (you can define your own event name)
+func (wg * Widget) RegistEvent(evtName string, f func(Widgets)) {
+    wg.events[evtName] = f
 }
 
-func (btn * Button) Call(evtName string) {
-    if f, ok := btn.events[evtName]; ok {
+// A function to call the event function by the event name
+func (wg * Widget) Call(evtName string) {
+    if f, ok := wg.events[evtName]; ok {
         // TODO: Call Event Here
-        f(btn)
+        f(wg)
     }
 }
 
-func (btn * Button) Pack(win * Window) {
-    btn.win_id = win.id
-    win.childs = append(win.childs, btn)
-    btn.Draw(0)
+// A function to pack in the window
+func (wg * Widget) Pack(win * Window) {
+    wg.win_id = win.id
+    win.childs = append(win.childs, wg)
+    wg.Draw(0)
 }
 
+// A function should be overwrited
+func (wg * Widget) Draw(state int) {
+    // Should be overwrite
+}
+
+// A function to draw the button according to the state number
+// (you can define your own state number meaning, but 0 always should means the default or inactive state)
 func (btn * Button) Draw(state int) {
     var err error
     textsur, err := default_font.RenderText(btn.text, ToSDLColor(btn.text_color))
@@ -91,6 +117,7 @@ func (btn * Button) Draw(state int) {
 
     tw, th := textsur.Size()
     sw, sh := max(tw, btn.w), max(th, btn.h)
+    btn.w, btn.h = sw, sh
 
     var fg, bg Color
     if state == 0 { // Deactive
@@ -99,8 +126,8 @@ func (btn * Button) Draw(state int) {
         fg, bg = btn.active_fg, btn.active_bg
     }
 
-    win.DrawRect(btn.x, btn.y, btn.x + sw + 4, btn.y + sh + 4, fg)
-    win.DrawRectBorder(btn.x, btn.y, btn.x + sw + 4, btn.y + sh + 4, 2, bg)
+    win.DrawRect(btn.x, btn.y, btn.x + sw + 4, btn.y + sh + 4, bg)
+    win.DrawRectBorder(btn.x, btn.y, btn.x + sw + 4, btn.y + sh + 4, 2, fg)
 
     f := func(n, a, b int) int {
         return n + (b - a) / 2
@@ -111,15 +138,36 @@ func (btn * Button) Draw(state int) {
     win._scr.Blit(textsur, r)
 }
 
+// Set the Background Color of the button
+func (btn * Button) SetBgColor(color Color) {
+    btn.bg = color
+}
 
+// Set the Forground Color of the button (or the border color)
+func (btn * Button) SetFgColor(color Color) {
+    btn.fg = color
+}
+
+// Set the background Color of the button when mouse hover on it
+func (btn * Button) SetActiveBgColor(color Color) {
+    btn.active_bg = color
+}
+
+// Set the foreground color of the button (or the border color)
+func (btn * Button) SetActiveFgColor(color Color) {
+    btn.active_fg = color
+}
+
+// Returns a pointer to a Button instance, remember to use Pack after New...
+// Button has two default event "active" and "deactive"
 func NewButton(x, y, w, h int, text string) (*Button) {
-    btn := new(Button)
+    btn := &Button{Widget: new(Widget)}
     btn.x, btn.y, btn.w, btn.h = x, y, w, h
     btn.text = text
-    btn.bg = 0xffffff
-    btn.fg = 0x000000
-    btn.active_bg = 0xffffff
-    btn.active_fg = 0xff0000
+    btn.fg = 0xffffff
+    btn.bg = 0x000000
+    btn.active_fg = 0xffffff
+    btn.active_bg = 0xff0000
     btn.text_color = 0xffffff
     btn.events = make(map[string]func(Widgets))
     btn.events["active"] = func(Widgets) {
@@ -131,6 +179,31 @@ func NewButton(x, y, w, h int, text string) (*Button) {
     return btn
 }
 
+// Returns a pointer to a Label instance
+// Label has no default events
+func NewLabel(x, y, w, h int, text string) (*Label) {
+    lb := &Label{Widget: new(Widget), x: x, y: y, w: y, h: h, text: text}
+    lb.fg = 0xffffff
+    lb.bg = 0x000000
+    return btn
+}
+
+func (lb * Label) Draw(state int) {
+    var err error
+    if state == 1 {
+        textsur, err := default_font.RenderText(lb.text)
+
+        tw, ty = textsur.Size()
+        sw, sh = max(lb.w, tw), max(lb.h, ty)
+        lb.x, lb.y = sw, sh
+
+        r = sdl.NewRect(lb.x, lb.y, sw, sh)
+        win := GetWinById(lb.win_id)
+        win._scr.Blit(textsur,  r)
+    }
+}
+
+// Map uint32 to r, g, b color
 func ToRGB(c uint32) (r, g, b uint8) {
     r = uint8((c | 0xff0000) >> 4)
     g = uint8((c | 0x00ff00) >> 2)
@@ -138,6 +211,7 @@ func ToRGB(c uint32) (r, g, b uint8) {
     return
 }
 
+// Map r, b, g color to SDL_Color instance (define in sdl)
 func ToSDLColor(c uint32) sdl.Color {
     r, g, b := ToRGB(c)
     return *sdl.NewColor(r, g, b)

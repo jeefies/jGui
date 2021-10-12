@@ -18,13 +18,13 @@ func main() {
 	jgui.UpdateMethod(jgui.UPDATE_BY_SURFACE)
 
 	win.DrawRect(0, 0, 1, 1, 0xffffff)
-	btn := jgui.NewButton(50, 50, 100, 30, "Button")
-
+	btn := jgui.NewButton(30, 15, 100, 30, "Button")
 	btn.Pack(win)
-
     btn.RegistEvent("mouse up", func(wg jgui.Widgets) {
        jgui.Print("mouse up\n")
     })
+
+    lb := jgui.NewLabel(50, 15, 0, 0, "My Label")
 
 	/*
 	r := jgui.NewRect(1, 1, 5, 5)
