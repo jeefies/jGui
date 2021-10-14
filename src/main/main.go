@@ -20,12 +20,15 @@ func main() {
 	win.DrawRect(0, 0, 1, 1, 0xffffff)
 	btn := jgui.NewButton(30, 15, 100, 30, "Button")
 	btn.Pack(win)
+    // btn.Draw(0)
     btn.RegistEvent("mouse up", func(wg jgui.Widgets) {
        jgui.Print("mouse up\n")
     })
 
-    lb := jgui.NewLabel(50, 15, 0, 0, "My Label")
-
+    lb := jgui.NewLabel(100, 55, 0, 0, "My Label")
+    lb.Pack(win)
+    // lb.Draw(0)
+    
 	/*
 	r := jgui.NewRect(1, 1, 5, 5)
 	jgui.FillRect(win, r, 0xff00ff)

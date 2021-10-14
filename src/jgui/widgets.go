@@ -82,6 +82,21 @@ func (wg * Widget) IsIn(x, y int) bool {
     }
 }
 
+// A function to change the widgets position
+func (wg * Widget) MoveTo(x, y int) {
+    wg.x, wg.y = x,  y
+}
+
+// A function to set the widget's width and height
+func (wg * Widget) SetSize(w, h int) {
+    wg.w, wg.h = w, h
+}
+
+// A function returns to int of the widgets width and height
+func (wg * Widget) GetSize() (int, int) {
+    return wg.w, wg.h
+}
+
 // Regist a Event's function by the name (you can define your own event name)
 func (wg * Widget) RegistEvent(evtName string, f func(Widgets)) {
     wg.events[evtName] = f
@@ -110,6 +125,7 @@ func (wg * Widget) Draw(state int) {
 // A function to draw the button according to the state number
 // (you can define your own state number meaning, but 0 always should means the default or inactive state)
 func (btn * Button) Draw(state int) {
+    // Print("Button Drew\n")
     var err error
     textsur, err := default_font.RenderText(btn.text, ToSDLColor(btn.text_color))
     check(err)
@@ -182,23 +198,27 @@ func NewButton(x, y, w, h int, text string) (*Button) {
 // Returns a pointer to a Label instance
 // Label has no default events
 func NewLabel(x, y, w, h int, text string) (*Label) {
-    lb := &Label{Widget: new(Widget), x: x, y: y, w: y, h: h, text: text}
+    lb := &Label{Widget: new(Widget), text: text}
+    lb.x, lb.y, lb.w, lb.h = x, y, w, h
     lb.fg = 0xffffff
     lb.bg = 0x000000
-    return btn
+    return lb
 }
 
 func (lb * Label) Draw(state int) {
-    var err error
-    if state == 1 {
-        textsur, err := default_font.RenderText(lb.text)
+    // Print("Label Drew\n")
+    if state == 0 {
+        var err error
+        textsur, err := default_font.RenderText(lb.text, ToSDLColor(lb.fg))
+        check(err)
 
-        tw, ty = textsur.Size()
-        sw, sh = max(lb.w, tw), max(lb.h, ty)
+        tw, ty := textsur.Size()
+        sw, sh := max(lb.w, tw), max(lb.h, ty)
         lb.x, lb.y = sw, sh
 
-        r = sdl.NewRect(lb.x, lb.y, sw, sh)
+        r := sdl.NewRect(lb.x, lb.y, sw, sh)
         win := GetWinById(lb.win_id)
+        win.DrawRect(lb.x, lb.y, sw, sh, lb.bg)
         win._scr.Blit(textsur,  r)
     }
 }

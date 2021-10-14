@@ -1,7 +1,7 @@
 package jgui
 
 import (
-    _ "log"
+    "log"
     _ "sync/atomic"
 
     "sdl"
@@ -49,7 +49,16 @@ func Delay(ms uint32) {
 }
 
 func Mainloop() {
+    // log.Println("Mainloop start")
 	_update_func_id := new(sdl.TimerID)
+    for i, win := range winlist {
+        for j, wg := range win.childs {
+            // FIXME: Would not draw widgets for the first time
+            wg.Draw(0)
+            log.Printf("win %d; wg %d\n", i, j)
+        }
+    }
+    
 	go sdl.AddTimer(1000/FPS, updateWindows_timerfunc, nil, _update_func_id)
     defer sdl.RemoveTimer(_update_func_id)
 
