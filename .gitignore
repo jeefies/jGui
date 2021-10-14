@@ -12,5 +12,6 @@ include
 
 main
 log.txt
+dev.sh
 
 token.git

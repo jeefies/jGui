@@ -23,6 +23,7 @@ type Widgets interface {
     // A Function to get the parent window
     Pack(win * Window)
     // state can be define as your own, but 0 always stands for default state
+    // When 'deactive' event called, must Draw as the default state (state = 1)
     Draw(state int)
     // A function to change the position of the widget
     MoveTo(x, y int)
@@ -114,11 +115,15 @@ func (wg * Widget) Call(evtName string) {
 func (wg * Widget) Pack(win * Window) {
     wg.win_id = win.id
     win.childs = append(win.childs, wg)
-    wg.Draw(0)
+    // BUG: this would not call the current widgets function Draw, but structure Widget's
+    // 不会调用子类Draw方法，依据测试，这里会调用Widget结构体下的Draw方法，在log.txt中回出现错误信息
+    // 导致在main函数中Pack时，屏幕不会显示。利用创建新Widget时函数闭包的性质，以及Call(不会继承)解决。
+    // wg.Draw(0)
 }
 
-// A function should be overwrited
+// A function should be overwrited. 需要被重写！
 func (wg * Widget) Draw(state int) {
+    logger.Print("Should not be called!\n")
     // Should be overwrite
 }
 
@@ -202,6 +207,10 @@ func NewLabel(x, y, w, h int, text string) (*Label) {
     lb.x, lb.y, lb.w, lb.h = x, y, w, h
     lb.fg = 0xffffff
     lb.bg = 0x000000
+    lb.events = make(map[string]func(Widgets))
+    lb.events["deactive"] = func(Widgets) {
+        lb.Draw(0)
+    }
     return lb
 }
 
@@ -214,7 +223,8 @@ func (lb * Label) Draw(state int) {
 
         tw, ty := textsur.Size()
         sw, sh := max(lb.w, tw), max(lb.h, ty)
-        lb.x, lb.y = sw, sh
+        // FIXED: mistake update label's x, y to w, h
+        lb.w, lb.h = sw, sh
 
         r := sdl.NewRect(lb.x, lb.y, sw, sh)
         win := GetWinById(lb.win_id)

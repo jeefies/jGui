@@ -13,21 +13,17 @@ func main() {
 
 	win.DrawRectCentered(15, 15, 10, 0xff00)
 
-	win.Update()
-
 	jgui.UpdateMethod(jgui.UPDATE_BY_SURFACE)
 
 	win.DrawRect(0, 0, 1, 1, 0xffffff)
-	btn := jgui.NewButton(30, 15, 100, 30, "Button")
+	btn := jgui.NewButton(15, 50, 100, 30, "Button")
 	btn.Pack(win)
-    // btn.Draw(0)
     btn.RegistEvent("mouse up", func(wg jgui.Widgets) {
        jgui.Print("mouse up\n")
     })
 
-    lb := jgui.NewLabel(100, 55, 0, 0, "My Label")
+    lb := jgui.NewLabel(100, 100, 10, 10, "My Label")
     lb.Pack(win)
-    // lb.Draw(0)
     
 	/*
 	r := jgui.NewRect(1, 1, 5, 5)
@@ -37,6 +33,7 @@ func main() {
 	// win.DrawCircle(100, 100, 100, 0xff0000)
 
 	print("Mainloop start!\n")
+    win.Update()
 
 	jgui.Mainloop()
 

@@ -7,8 +7,12 @@ import (
     "sdl"
 )
 
+// The frequence to update the window (flash times per second)
+// 图形化界面的帧率，每秒刷新的次数
 var FPS uint32 = 35
 
+// Init sdl method automatically when import the package
+// 在引入jgui模块时调用sdl的初始化(非编译时进行)
 func init() {
 	Init()
 }
@@ -17,11 +21,15 @@ func Init() {
 	sdl.Init(sdl.INIT_DEFAULT)
 }
 
+// Close sdl unit  when end the program
+// 最后关闭sdl界面，调用c sdl的SDL_Quit结构，定义在package sdl中
 func Quit() {
     print("jgui Quit\n")
 	sdl.Quit()
 }
 
+// if err is not nil, panic the error (as a unexpected mistake)
+// 把错误当作异常抛出，在jgui中，几乎每一个错误都会导致界面运行失败
 func check(err error) {
 	if (err != nil) {
 		panic(err)
@@ -44,17 +52,23 @@ func max(x, y int) int {
 	}
 }
 
+// like time.Sleep, but use interface of sdl
+// 想time标准库中的Sleep方法，只是调用的时sdl的接口(SDL_Delay)，注意单位是毫秒
 func Delay(ms uint32) {
 	sdl.Delay(ms)
 }
 
+// The main body to run the program.
+// 整个gui模块的主体部分。类似于c sdl中的大循环
 func Mainloop() {
     // log.Println("Mainloop start")
 	_update_func_id := new(sdl.TimerID)
     for i, win := range winlist {
         for j, wg := range win.childs {
-            // FIXME: Would not draw widgets for the first time
-            wg.Draw(0)
+            // FIXME: Would not draw widgets for the first tim
+            // wg.Draw(0)
+            // Solution, use event "deactive to draw the default statement"
+            wg.Call("deactive")
             log.Printf("win %d; wg %d\n", i, j)
         }
     }
