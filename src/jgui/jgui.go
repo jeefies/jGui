@@ -99,6 +99,11 @@ func Mainloop() {
                                     break
                                 }
                             }
+                            
+                            if len(winlist) == 0 {
+                                done <- true
+                                return
+                            }
                         default:
                             for _, w := range winlist {
                                 if w.sid == e.WinId() {

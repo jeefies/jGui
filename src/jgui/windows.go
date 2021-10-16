@@ -100,6 +100,14 @@ func (win * Window) GetSDLId() uint32 {
 // handleWindowEvent handles the windows event like resizing the size
 func (win * Window) handleWindowEvent(etype uint32) {
     // TODO: Window handleWindowEvent NOT COMPLETE NOW
+    // FIXME: Handle Window Close event
+    switch etype {
+        case sdl.WINDOW_CLOSE:
+            win.Close()
+            id := int(win.id)
+            winlist = append(winlist[:id], winlist[id+1:]...)
+    }
+    
 }
 
 // handleEvent handles all event of the window
