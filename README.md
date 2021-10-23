@@ -9,13 +9,17 @@ So Now it changes into golang, and will keep on developing with golang
 To make a simple gui for myself use (to replace tkinter, gtk or qt)  
 Notice that it won't be perfect and it would have many issues
 
+## C support
+After exporting the GOPATH, you can use  
+`go build -buildmode=c-archive -o libjgui.a main` to build a C static shared library  
+or `go build -buildmode=c-shared -o libjgui.so main` to build a C dynamic shared library.  
+All interfaces see the file `include/jgui.h`
+
 ## Dependences
 It just requires `libSDL2` and `libSDL2-ttf`  
 Of course, `libSDL2-gfx libSDL2-mixer libSDL2-net` are also needed in the future but not now.  
 > At First, gfx, mixer, net are not used!  
-> So you can choose **NOT** to download them
-
-
+> So you can choose **NOT** to download them  
 ### Debian/Ubuntu
 `sudo apt install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev libsdl2-mixer-dev libsdl2-net-dev -y`  
 This can automatically download the stable development libs that can use when developing a project.  

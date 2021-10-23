@@ -1,7 +1,6 @@
 bin
 pkg
 tmp
-include
 
 *.o
 *.a
