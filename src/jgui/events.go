@@ -36,14 +36,14 @@ func init() {
 // the int is the id of the event, CloseEvent should give the id in
 // bool stands for whether it's useable or not
 func PollEvent() (*sdl.Event, int, bool) {
-    i := <- gLocks
+    i := <-gLocks
     remained := gEvents[i].Poll()
     logger.Printf("Locked %d, type = %d, avaliable = %v\n", i, gEvents[i].Type(), remained)
     return gEvents[i], i, remained
 }
 
 func PollEventWait() (*sdl.Event, int) {
-    i := <- gLocks
+    i := <-gLocks
     gEvents[i].WaitPoll()
     return gEvents[i], i
 }

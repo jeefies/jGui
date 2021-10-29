@@ -10,8 +10,9 @@ package jgui
 typedef uint32_t Uint32;
 
 typedef uint32_t jgui_window;
-typedef uintptr_t j_widget;
+typedef uint32_t j_widget;
 
+typedef void (*j_event)(j_widget);
  */
 import "C"
 
@@ -51,18 +52,24 @@ func delay(ms C.Uint32) {
 //export create_label
 func create_label(x, y, w, h C.int, text *C.char) C.j_widget {
 	lb := NewLabel(int(x), int(y), int(w), int(h), C.GoString(text))
-	return C.j_widget(uintptr(unsafe.Pointer(lb)))
+	return C.j_widget(lb.id)
+}
+
+//export create_button
+func create_button(x, y, w, h C.int, text *C.char) C.j_widget {
+	btn := NewButton(int(x), int(y), int(w), int(h), C.GoString(text))
+	return C.j_widget(btn.id)
 }
 
 //export pack_button
 func pack_button(wg C.j_widget, win C.Uint32) {
-	widget := (*Button)(unsafe.Pointer(uintptr(wg)))
+	widget := GetWidgetById(uint32(wg)).(*Button)
 	widget.Pack(from_id(win));
 }
 
 //export pack_label
 func pack_label(wg C.j_widget, win C.Uint32) {
-	widget := (*Label)(unsafe.Pointer(uintptr(wg)))
+	widget := GetWidgetById(uint32(wg)).(*Label)
 	widget.Pack(from_id(win));
 }
 
@@ -72,6 +79,14 @@ func pack_widget(wg C.j_widget, win C.Uint32) {
 	widget.Pack(from_id(win));
 }
 
+//export regist_event
+func regist_event(wg C.j_widget, evtname * C.char, e func(C.j_widget)) {
+    evt := func(w Widgets) {
+        e(C.j_widget(w.GetId()))
+    }
+    widget := GetWidgetById(uint32(wg))
+    widget.RegistEvent(C.GoString(evtname), evt)
+}
 
 //export mainloop
 func mainloop() {

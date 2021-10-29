@@ -6,9 +6,18 @@ A file for all widgets like Button or Label
 */
 
 import (
+    "sync"
+    
     "sdl"
     "sdl/ttf"
 )
+
+var wgrefs struct {
+    sync.Mutex
+    left int
+    wgs []Widgets
+    avaliables []int
+}
 
 type Color = uint32
 
@@ -25,22 +34,27 @@ type Widgets interface {
     // state can be define as your own, but 0 always stands for default state
     // When 'deactive' event called, must Draw as the default state (state = 1)
     Draw(state int)
+    // The close function
+    Close()
     // A function to change the position of the widget
     MoveTo(x, y int)
     // A function to set the width and the height
     SetSize(w, h int)
     // A function to get the size of the widget
     GetSize() (int, int)
+    
+    GetId() uint32
 }
 
 type Widget struct {
-    childs []Widgets
-    parent Widgets
+    // childs []Widgets
+    // parent Widgets
 
     x, y, w, h int
     bg, fg Color
 
     win_id uint32
+    id uint32
     events map[string]func(Widgets)
 }
 
@@ -71,6 +85,39 @@ func init() {
     if (err != nil) {
         panic(err)
     }
+    
+    wgrefs.wgs = make([]Widgets,  0)
+    wgrefs.avaliables = make([]int, 0)
+    wgrefs.left = 0
+}
+
+func NewWidgetId(wg Widgets) uint32 {
+    wgrefs.Lock()
+    defer wgrefs.Unlock()
+    var id int
+    if wgrefs.left == 0 {
+        id = len(wgrefs.wgs)
+        wgrefs.wgs = append(wgrefs.wgs, wg)
+    } else {
+        id = wgrefs.avaliables[0]
+        wgrefs.avaliables = wgrefs.avaliables[1:]
+        wgrefs.wgs[id] = wg
+    }
+    
+    return uint32(id)
+}
+
+func GetWidgetById(id uint32) Widgets {
+    iid := int(id)
+    if (iid > len(wgrefs.wgs)) {
+        return nil
+    }
+    
+    if wg := wgrefs.wgs[iid]; wg != nil {
+        return wg
+    }
+    
+    return nil
 }
 
 // to check it the position (x, y) is in the area of the widget
@@ -81,6 +128,16 @@ func (wg * Widget) IsIn(x, y int) bool {
     } else {
         return true
     }
+}
+
+// A function to close the wigdet (may still hold the memory)
+func (wg * Widget) Close() {
+    wgrefs.Lock()
+    defer wgrefs.Unlock()
+    id := wg.id
+    wgrefs.wgs[id] = nil
+    wgrefs.left += 1
+    wgrefs.avaliables = append(wgrefs.avaliables, int(id))
 }
 
 // A function to change the widgets position
@@ -109,6 +166,11 @@ func (wg * Widget) Call(evtName string) {
         // TODO: Call Event Here
         f(wg)
     }
+}
+
+// A function returns the id of the widget
+func (wg * Widget) GetId() uint32 {
+    return wg.id
 }
 
 // A function to pack in the window
@@ -183,6 +245,7 @@ func (btn * Button) SetActiveFgColor(color Color) {
 // Button has two default event "active" and "deactive"
 func NewButton(x, y, w, h int, text string) (*Button) {
     btn := &Button{Widget: new(Widget)}
+    btn.id = NewWidgetId(btn)
     btn.x, btn.y, btn.w, btn.h = x, y, w, h
     btn.text = text
     btn.fg = 0xffffff
@@ -204,6 +267,7 @@ func NewButton(x, y, w, h int, text string) (*Button) {
 // Label has no default events
 func NewLabel(x, y, w, h int, text string) (*Label) {
     lb := &Label{Widget: new(Widget), text: text}
+    lb.id = NewWidgetId(lb)
     lb.x, lb.y, lb.w, lb.h = x, y, w, h
     lb.fg = 0xffffff
     lb.bg = 0x000000

@@ -72,7 +72,7 @@ func Mainloop() {
             log.Printf("win %d; wg %d\n", i, j)
         }
     }
-    
+
 	go sdl.AddTimer(1000/FPS, updateWindows_timerfunc, nil, _update_func_id)
     defer sdl.RemoveTimer(_update_func_id)
 
