@@ -13,7 +13,7 @@ int j_draw_circle(SDL_Surface * sur, int x, int y, int r, Uint32 c);
 int j_drawrect_border(SDL_Surface * sur, int x, int y, int xw, int yh, int width, Uint32 color);
 */
 import "C"
-import "sdl"
+import "jGui/sdl"
 
 import "unsafe"
 

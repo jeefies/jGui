@@ -7,9 +7,9 @@ A file for all widgets like Button or Label
 
 import (
     "sync"
-    
-    "sdl"
-    "sdl/ttf"
+
+    sdl "jGui/sdl"
+    ttf "jGui/sdl/ttf"
 )
 
 var wgrefs struct {
@@ -42,7 +42,7 @@ type Widgets interface {
     SetSize(w, h int)
     // A function to get the size of the widget
     GetSize() (int, int)
-    
+
     GetId() uint32
 }
 
@@ -70,11 +70,15 @@ type Button struct {
     *Widget
     text string
     text_size int
-    text_color Color
+    text_color Color // The color of the text
     active_bg, active_fg Color
+    // fg is the border color, default to white
+    // bg is the background of the text, default to black
+}
 
-    // event's functions
-    onclick func(*Button)
+type Area struct {
+	*Widget
+	// fg is not used
 }
 
 var default_font * ttf.Font
@@ -85,7 +89,7 @@ func init() {
     if (err != nil) {
         panic(err)
     }
-    
+
     wgrefs.wgs = make([]Widgets,  0)
     wgrefs.avaliables = make([]int, 0)
     wgrefs.left = 0
@@ -103,7 +107,7 @@ func NewWidgetId(wg Widgets) uint32 {
         wgrefs.avaliables = wgrefs.avaliables[1:]
         wgrefs.wgs[id] = wg
     }
-    
+
     return uint32(id)
 }
 
@@ -112,11 +116,11 @@ func GetWidgetById(id uint32) Widgets {
     if (iid > len(wgrefs.wgs)) {
         return nil
     }
-    
+
     if wg := wgrefs.wgs[iid]; wg != nil {
         return wg
     }
-    
+
     return nil
 }
 
@@ -295,6 +299,38 @@ func (lb * Label) Draw(state int) {
         win.DrawRect(lb.x, lb.y, sw, sh, lb.bg)
         win._scr.Blit(textsur,  r)
     }
+}
+
+func NewArea(x, y, w, h int, backcolor Color) (*Area) {
+	area := &Area{ Widget: new(Widget) }
+
+	area.id = 0 // Area widget's id is always 0 and useless
+
+	area.x, area.y, area.w, area.h = x, y, w, h
+	area.bg = backcolor
+
+	area.events = make(map[string]func(Widgets))
+	area.events["deactive"] = func(Widgets) {
+		area.Draw(0)
+	}
+
+	logger.Println("Area Create")
+
+	return area
+}
+
+func (a *  Area) Draw(state int) {
+	if state == 0 {
+		win := GetWinById(a.win_id)
+		win.DrawRect(a.x, a.y, a.w, a.h, a.bg)
+		logger.Printf("Area Draw state 0, %x\n", a.bg)
+	}
+}
+
+// A function to pack in the window
+func (area * Area) Pack(win * Window) {
+    area.win_id = win.id
+    win.areas = append(win.areas, area)
 }
 
 // Map uint32 to r, g, b color

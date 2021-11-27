@@ -1,6 +1,6 @@
 package jgui
 
-import "sdl"
+import sdl "jGui/sdl"
 
 const (
 	WIN_FULLSCREEN		= sdl.WIN_FULLSCREEN

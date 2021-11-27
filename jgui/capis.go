@@ -18,7 +18,7 @@ import "C"
 
 import "unsafe"
 
-import "sdl"
+import sdl "jGui/sdl"
 
 //export create_window
 func create_window(title * C.char, w, h C.int, flags C.Uint32) C.jgui_window {

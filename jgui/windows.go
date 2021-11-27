@@ -4,15 +4,18 @@ import (
     "sync"
 )
 
-import "sdl"
+import "jGui/sdl"
 
 var winlist = make([](* Window), 0)
 // 0 for surface, 1 for renderer
 const (
     UPDATE_BY_SURFACE = 0
-    UPDATE_BY_RENDERER = 1
+    UPDATE_BY_RENDERER =	1 << 0
+    UPDATE_AREAS =		1 << 1
+    FLAGS_MAX =			1 << 2
 )
 var updateWindowMethod int = 0
+var updateAreas int = 0
 
 
 // CreateWindow returns a Window instance
@@ -41,6 +44,7 @@ func CreateWindow(title string, w, h int, flags uint32) (win * Window) {
     win.sid = win.win.Id()
 
     win.childs = make([]Widgets, 0, 5)
+    win.areas = make([](*Area), 0, 5)
     win.current_widget = nil
 
     return
@@ -107,7 +111,6 @@ func (win * Window) handleWindowEvent(etype uint32) {
             id := int(win.id)
             winlist = append(winlist[:id], winlist[id+1:]...)
     }
-    
 }
 
 // handleEvent handles all event of the window
@@ -189,13 +192,41 @@ func (win * Window) Update() {
     check(err)
 }
 
+// ForceUpdate means clear all content of the window and then draw all widgets from scratch
+func (win * Window) ForceUpdate() {
+	// win._scr.Clear()
+	win.ren.Clear()
+
+	win.UpdateAreas()
+	win.UpdateWidgets()
+
+	win.Update()
+}
+
+// UpdateAreas draw all areas
+func (win * Window) UpdateAreas() {
+	for _, a := range win.areas {
+		a.Call("deactive")
+		logger.Printf("Widget %T:%d call deactive\n",  a, a.GetId())
+	}
+}
+
+// UpdateWidges draw all widgets 
+func (win * Window) UpdateWidgets() {
+	for _, a := range win.childs {
+		a.Call("deactive")
+		logger.Printf("Area %T:%d call deactive\n",  a, a.GetId())
+	}
+}
+
 // Decide the way of updating windows is to use surface or renderer when mainloop
 // flag could be one of UPDATE_BY_RENDERER and UPDATE_BY_SURFACE
 func UpdateMethod(flag int) error {
-    if 0 > flag || flag > 1 {
+    if 0 > flag || flag > FLAGS_MAX {
         return sdl.NewSDLError("No such Update Method")
     }
-    updateWindowMethod = flag
+    updateWindowMethod = flag & 3 // & 0b11
+    updateAreas = flag & UPDATE_AREAS
 
     return nil
 }
@@ -215,6 +246,16 @@ func updateWindows() {
             }(w, &wg)
         }
     } else if updateWindowMethod == 1 {
+        for _, w := range winlist {
+            go func(win *Window, wg *sync.WaitGroup) {
+                win.Update()
+                wg.Done()
+            }(w, &wg)
+        }
+    }
+
+    if updateAreas == UPDATE_AREAS {
+	wg.Add(len(winlist))
         for _, w := range winlist {
             go func(win *Window, wg *sync.WaitGroup) {
                 win.Update()

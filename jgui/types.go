@@ -4,7 +4,7 @@ import (
     "log"
     "os"
 
-    "sdl"
+    "jGui/sdl"
 )
 
 type Screen = sdl.Surface
@@ -15,11 +15,11 @@ var logger *log.Logger
 var loggerFile *os.File
 
 func init() {
-    var err error
-    loggerFile, err = os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0766)
-    check(err)
+	var err error
+	loggerFile, err = os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE, 0664)
+	check(err)
 
-    logger = log.New(loggerFile,  "Jgui logger:", log.Lmsgprefix | log.Ltime |  log.Lmicroseconds | log.Lshortfile)
+	logger = log.New(loggerFile,  "Jgui logger:", log.Lmsgprefix | log.Ltime |  log.Lmicroseconds | log.Lshortfile)
 }
 
 type Window struct {
@@ -28,7 +28,8 @@ type Window struct {
 	_scr * sdl.Surface // scr would change to private function
 
 	childs []Widgets
-    current_widget Widgets
+	current_widget Widgets
+	areas [](*Area)
 
 	id uint32
 	sid uint32

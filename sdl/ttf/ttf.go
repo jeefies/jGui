@@ -1,6 +1,6 @@
 package ttf
 
-import "sdl"
+import "jGui/sdl"
 import "unsafe"
 
 /*
