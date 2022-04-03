@@ -1,17 +1,17 @@
 package main
 
 import (
-    _ "log"
-)
+	_ "log"
 
-import "jgui"
+	"./jgui"
+)
 
 func main() {
 	// jgui.Init() Move into init() function in private package
 
 	win := jgui.CreateWindow("Hello J_Gui", 200, 200, jgui.WIN_SHOWN)
 
-	win2 := jgui.CreateWindow("Hello Gui2", 200,  200, jgui.WIN_SHOWN)
+	win2 := jgui.CreateWindow("Hello Gui2", 200, 200, jgui.WIN_SHOWN)
 	win2.DrawRectCentered(100, 100, 90, 0x55ffffff)
 
 	win.DrawRectCentered(15, 15, 10, 0xff00)
@@ -25,7 +25,7 @@ func main() {
 		jgui.Print("mouse up\n")
 	})
 
-	lb := jgui.NewLabel(40,  15, 0, 0, "My Label")
+	lb := jgui.NewLabel(40, 15, 0, 0, "My Label")
 	lb.Pack(win)
 
 	print("Mainloop start!\n")

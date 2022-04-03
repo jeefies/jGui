@@ -69,5 +69,5 @@ func (font *Font) RenderShaded(str string, colorfg Color, colorbg Color) (sur *S
 }
 
 func COLOR(color Color) (C.SDL_Color) {
-	return *(*C.SDL_Color)(unsafe.Pointer(&color))
+	return *(*C.SDL_Color)(unsafe.Pointer(&color.SDLColor()))
 }

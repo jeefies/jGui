@@ -42,8 +42,8 @@ func (sur * Surface) Blit(src * Surface, place * Rect)  error {
     return nil
 }
 
-func (sur * Surface) BlitPart(src * Surface, area * Rect, into * Rect) error {
-    if C.SDL_BlitSurface(src, area, sur, into) != C.int(0) {
+func (sur * Surface) BlitPart(src * Surface, origin * Rect, into * Rect) error {
+    if C.SDL_BlitSurface(src, origin, sur, into) != C.int(0) {
         return NewSDLError("Could not apply surface into surface")
     }
     return nil
@@ -54,9 +54,9 @@ func (sur *Surface) Clear() error {
     return sur.FillRect(nil, 0)
 }
 
-// ClearWith want a color (uint32 0xAARRBBGG) to fill all the surface
-func (sur *Surface) ClearWith(color uint32) error {
-    return sur.FillRect(nil, color)
+// ClearWith want a color (type Color) to fill all the surface
+func (sur *Surface) ClearWith(color Color) error {
+    return sur.FillRect(nil, color.MapA(sur))
 }
 
 // Size returns two integer (int, int) shows the width and the height of the surface
@@ -71,6 +71,7 @@ func (sur *Surface) Close() {
 
 // Create a new surface like current surface
 func CreateSurface(width, height int) (*Surface, error) {
+	// With default RGBAmasks
     sur := C.SDL_CreateRGBSurface(0, C.int(width), C.int(height), 32, 0, 0, 0, 0)
     if sur == nil {
             return nil, NewSDLError("Could Create Surface")

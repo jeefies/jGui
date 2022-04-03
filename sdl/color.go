@@ -5,17 +5,17 @@ package sdl
  */
 import "C"
 
-// RGB Color Part
-func MapRGB(sur *Surface, r, g, b uint8) uint32 {
-	var color MapColor = C.SDL_MapRGB(sur.format, C.Uint8(r), C.Uint8(g), C.Uint8(b))
+func (c Color) Map(sur * Surface) uint32 {
+	var color MapColor = C.SDL_MapRGB(sur.format, C.Uint8(c.R), C.Uint8(c.G), C.Uint8(c.B))
 	return uint32(color)
 }
 
-func MapRGBA(sur *Surface, r, g, b, a uint8) uint32 {
-	var color MapColor = C.SDL_MapRGBA(sur.format, C.Uint8(r), C.Uint8(g), C.Uint8(b), C.Uint8(a))
+func (c Color) MapA(sur * Surface) uint32 {
+	var color MapColor = C.SDL_MapRGBA(sur.format, C.Uint8(c.R), C.Uint8(c.G), C.Uint8(c.B), C.Uint8(c.A))
 	return uint32(color)
+
 }
 
-func NewColor(r, g, b uint8) (*Color) {
-    return &Color{C.Uint8(r), C.Uint8(g), C.Uint8(b), C.Uint8(255)}
+func (c Color) SDLColor() _Color {
+    return _Color{C.Uint8(c.R), C.Uint8(c.G), C.Uint8(c.B), C.Uint8(c.A)}
 }

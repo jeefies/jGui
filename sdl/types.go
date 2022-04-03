@@ -18,13 +18,20 @@ type Window = C.SDL_Window
 type Renderer = C.SDL_Renderer
 type Surface = C.SDL_Surface
 type Texture = C.SDL_Texture
-type Color = C.SDL_Color
+type _Color = C.SDL_Color
 type Rect = C.SDL_Rect
 type MapColor = C.Uint32
 type PixelFormat = C.SDL_PixelFormat
 type Event = C.SDL_Event
 // type TimerID = C.TimerID
 type TimerID = uint64
+
+type Color struct {
+	R uint8
+	G uint8
+	B uint8
+	A uint8
+}
 
 type Position struct {
 	X int

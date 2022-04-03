@@ -7,10 +7,10 @@ import "C"
 
 // const render create flags
 const (
-	RENDERER_SOFTWARE = C.SDL_RENDERER_SOFTWARE
+	RENDERER_SOFTWARE      = C.SDL_RENDERER_SOFTWARE
 	RENDERER_TARGETTEXTURE = C.SDL_RENDERER_TARGETTEXTURE
-	RENDERER_PRESENTVSYNC = C.SDL_RENDERER_PRESENTVSYNC
-	RENDERER_ACCELERATED = C.SDL_RENDERER_ACCELERATED
+	RENDERER_PRESENTVSYNC  = C.SDL_RENDERER_PRESENTVSYNC
+	RENDERER_ACCELERATED   = C.SDL_RENDERER_ACCELERATED
 )
 
 // Renderer Part
@@ -66,8 +66,8 @@ func (ren *Renderer) FillRect(rect * Rect) {
 	C.SDL_RenderFillRect(ren, rect)
 }
 
-func (ren *Renderer) DrawLine(pos1, pos2 Position) {
-	C.SDL_RenderDrawLine(ren, C.int(pos1.X), C.int(pos1.Y), C.int(pos2.X), C.int(pos2.Y))
+func (ren *Renderer) DrawLine(start, end Position) {
+	C.SDL_RenderDrawLine(ren, C.int(start.X), C.int(start.Y), C.int(end.X), C.int(end.Y))
 }
 
 func (ren *Renderer) DrawPoint(pos Position) {
