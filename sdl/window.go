@@ -20,8 +20,8 @@ import "fmt"
 
 // const for window's postion (when creating)
 const (
-    WINPOS_CENTERED = int(C.SDL_WINDOWPOS_CENTERED_MASK)
-    WINPOS_UNDIFIE  = int(C.SDL_WINDOWPOS_UNDEFINED_MASK)
+    WINPOS_CENTERED  = int(C.SDL_WINDOWPOS_CENTERED_MASK)
+    WINPOS_UNDIFINED = int(C.SDL_WINDOWPOS_UNDEFINED_MASK)
 )
 
 // const for window's flags

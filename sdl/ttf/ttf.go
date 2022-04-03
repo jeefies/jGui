@@ -10,20 +10,18 @@ import "unsafe"
 */
 import "C"
 
-type Font = C.TTF_Font
-type Color = sdl.Color
+type Font    = C.TTF_Font
+type Color   = sdl.Color
 type Surface = sdl.Surface
 
-var init_ttf bool = false
+func init() {
+	if C.TTF_Init() != C.int(0) {
+		err = sdl.NewSDLError("Could Not Init ttf")
+		return
+	}
+}
 
 func OpenFont(fontfile string, size int) (font *Font, err error) {
-	if (!init_ttf) {
-		if C.TTF_Init() != C.int(0) {
-			err = sdl.NewSDLError("Could Not Init ttf")
-			return
-		}
-		init_ttf = true
-	}
 	font = C.TTF_OpenFont(C.CString(fontfile), C.int(size))
 	if (font == nil) {
 		err = sdl.NewSDLError("Could Not Load Font")

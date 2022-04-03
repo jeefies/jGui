@@ -66,11 +66,11 @@ func (ren *Renderer) FillRect(rect * Rect) {
 	C.SDL_RenderFillRect(ren, rect)
 }
 
-func (ren *Renderer) DrawLine(start, end Position) {
+func (ren *Renderer) DrawLine(start, end Point) {
 	C.SDL_RenderDrawLine(ren, C.int(start.X), C.int(start.Y), C.int(end.X), C.int(end.Y))
 }
 
-func (ren *Renderer) DrawPoint(pos Position) {
+func (ren *Renderer) DrawPoint(pos Point) {
 	C.SDL_RenderDrawPoint(ren, C.int(pos.X), C.int(pos.Y))
 }
 
