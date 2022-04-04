@@ -16,8 +16,7 @@ type Surface = sdl.Surface
 
 func init() {
 	if C.TTF_Init() != C.int(0) {
-		err = sdl.NewSDLError("Could Not Init ttf")
-		return
+		panic(sdl.NewSDLError("Could Not Init ttf"))
 	}
 }
 
@@ -67,5 +66,19 @@ func (font *Font) RenderShaded(str string, colorfg Color, colorbg Color) (sur *S
 }
 
 func COLOR(color Color) (C.SDL_Color) {
-	return *(*C.SDL_Color)(unsafe.Pointer(&color.SDLColor()))
+	return *(*C.SDL_Color)(unsafe.Pointer(color.SDLColor()))
+}
+
+func (font *Font) GuessSize(str string) (w, h int, err error) {
+	cstr := C.CString(str)
+	defer C.free(unsafe.Pointer(cstr))
+	var wp = new(C.int)
+	var hp = new(C.int)
+	if (C.TTF_SizeUTF8(font, cstr, wp, hp) != 0) {
+		err = sdl.NewSDLError("Could Not get text size")
+		return
+	}
+	w = int(*wp)
+	h = int(*hp)
+	return
 }

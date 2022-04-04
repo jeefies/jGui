@@ -6,11 +6,43 @@ Defines the apis to use the functions to edit the surface (serves by SDL)
 package sdl
 
 /*
-#include<SDL2/SDL.h>
-const Uint32 Amask = 0xff000000;
-const Uint32 Rmask = 0x00ff0000;
-const Uint32 Gmask = 0x0000ff00;
-const Uint32 Bmask = 0x000000ff;
+#include <SDL2/SDL.h>
+
+int get_place(int ppr, int x, int y) {
+	// ppr: pixels per row
+	return y * ppr + x;
+}
+
+int j_border(SDL_Surface * sur, SDL_Rect * area, int width, Uint32 color) {
+	Uint32 * pixels = (Uint32 *)sur->pixels;
+
+	int ppr = sur->pitch / sur->format->BytesPerPixel;
+
+	int x = area->x;
+	int y = area->y;
+	int w = area->w;
+	int h = area->h;
+
+	for (int i = 0; i < w; i++) {
+		for (int j = 0; j < width; j++) {
+			pixels[get_place(ppr, x + i, y + j)] = color;
+		}
+		for (int j = 0; j < width; j++) {
+			pixels[get_place(ppr, x + i, y + h - j)] = color;
+		}
+	}
+
+	for (int i = width; i < h - width + 1; i++) {
+		for (int j = 0; j < width; j++) {
+			pixels[get_place(ppr, x + j, y + i)] = color;
+		}
+		for (int j = 0; j < width; j++) {
+			pixels[get_place(ppr, x + w - 1 - j, y + i)] = color;
+		}
+	}
+
+	return 0;
+}
 
  */
 import "C"
@@ -19,8 +51,8 @@ import "C"
 // Surface.FillRect is the OO typed interface of SDL_FillRect
 // C interface is SDL_FillRect(Rect*, Uint32)
 func (sur * Surface) FillRect(rect * Rect, color uint32) error {
-    if (C.SDL_FillRect(sur, rect, C.Uint32(color)) != C.int(0)) {
-        return NewSDLError("Could Not Fill Surface")
+	if (C.SDL_FillRect(sur, rect, C.Uint32(color)) != C.int(0)) {
+		return NewSDLError("Could Not Fill Surface")
     }
     return nil
 }
@@ -81,4 +113,11 @@ func CreateSurface(width, height int) (*Surface, error) {
 
 func (sur * Surface) ToTexture(ren * Renderer) (*Texture, error) {
 	return ren.CreateTextureFromSurface(sur)
+}
+
+// Draw Old series see https://github.com/jeefies/jGui/blob/a8b1a0c95dd9638e6ef528a8ddac42c0665ac8b9/jgui/draw.go
+func (sur * Surface) DrawBorder(area * Rect, width int, cl Color) {
+	var w C.int = C.int(width)
+	var color C.Uint32 = C.Uint32(cl.MapA(sur))
+	C.j_border(sur, area, w, color)
 }

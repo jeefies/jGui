@@ -17,54 +17,28 @@ const (
 )
 
 const (
+	WIN_UPDATE_SURFACE = iota
+	WIN_UPDATE_RENDER
+)
+
+const (
 	RENDERER_SOFTWARE      = sdl.RENDERER_SOFTWARE
 	RENDERER_TARGETTEXTURE = sdl.RENDERER_TARGETTEXTURE
 	RENDERER_PRESENTVSYNC  = sdl.RENDERER_PRESENTVSYNC
 	RENDERER_ACCELERATED   = sdl.RENDERER_ACCELERATED
 )
 
+type WidgetEvent = uint8
 const (
-	// format in vim, `gaip `, `gaip=`
-	QUIT                uint32 = sdl.QUIT
-	KEYUP               uint32 = sdl.KEYUP
-	KEYDOWN             uint32 = sdl.KEYDOWN
-	WINDOWS_EVENT       uint32 = sdl.WINDOWS_EVENT
+	WE_ACTIVE WidgetEvent = iota
+	WE_DEACTIVE
+	WE_IN
+	WE_OUT
+	WE_RESIZE
+)
 
-	// Type of window events
-	WINDOW_SHOWN        uint32 = sdl.WINDOW_SHOWN
-	WINDOW_HIDDEN       uint32 = sdl.WINDOW_HIDDEN
-	WINDOW_EXPOSED      uint32 = sdl.WINDOW_EXPOSED
-	WINDOW_MOVED        uint32 = sdl.WINDOW_MOVED
-	WINDOW_RESIZED      uint32 = sdl.WINDOW_RESIZED
-	WINDOW_SIZE_CHANGED uint32 = sdl.WINDOW_SIZE_CHANGED
-	WINDOW_MINIMIZED    uint32 = sdl.WINDOW_MINIMIZED
-	WINDOW_MAXIMIZED    uint32 = sdl.WINDOW_MAXIMIZED
-	WINDOW_RESTORED     uint32 = sdl.WINDOW_RESTORED
-	WINDOW_ENTER        uint32 = sdl.WINDOW_ENTER
-	WINDOW_LEAVE        uint32 = sdl.WINDOW_LEAVE
-	WINDOW_FOCUS_GAINED uint32 = sdl.WINDOW_FOCUS_GAINED
-	WINDOW_FOCUS_LOST   uint32 = sdl.WINDOW_FOCUS_LOST
-	WINDOW_CLOSE        uint32 = sdl.WINDOW_CLOSE
-
-    // Type of MOUSE EVENT
-    MOUSE_MOTION        uint32 = sdl.MOUSE_MOTION
-    MOUSE_DOWN          uint32 = sdl.MOUSE_DOWN
-    MOUSE_UP            uint32 = sdl.MOUSE_UP
-    MOUSE_WHEEL         uint32 = sdl.MOUSE_WHEEL
-
-	// Special keys
-	KLEFT               uint32 = sdl.KLEFT
-	KRIGHT              uint32 = sdl.KRIGHT
-	KUP                 uint32 = sdl.KUP
-	KDOWN               uint32 = sdl.KDOWN
-
-	KLSHIFT             uint32 = sdl.KLSHIFT
-	KRSHIFT             uint32 = sdl.KRSHIFT
-	KLCTRL              uint32 = sdl.KLCTRL
-	KRCTRL              uint32 = sdl.KRCTRL
-
-	KTAB                uint32 = sdl.KTAB
-	KESC                uint32 = sdl.KESC
-	KBACKSPACE          uint32 = sdl.KBACKSPACE
-	KDEL                uint32 = sdl.KDEL
+const (
+	ALIGN_LEFT = iota
+	ALIGN_RIGHT
+	ALIGN_CENTER
 )

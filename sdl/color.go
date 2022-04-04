@@ -16,6 +16,6 @@ func (c Color) MapA(sur * Surface) uint32 {
 
 }
 
-func (c Color) SDLColor() _Color {
-    return _Color{C.Uint8(c.R), C.Uint8(c.G), C.Uint8(c.B), C.Uint8(c.A)}
+func (c Color) SDLColor() *_Color {
+    return &_Color{C.Uint8(c.R), C.Uint8(c.G), C.Uint8(c.B), C.Uint8(c.A)}
 }

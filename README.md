@@ -21,7 +21,7 @@ Of course, `libSDL2-gfx libSDL2-mixer libSDL2-net` are also needed in the future
 > At First, gfx, mixer, net are not used!  
 > So you can choose **NOT** to download them  
 ### Debian/Ubuntu
-`sudo apt install libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev libsdl2-mixer-dev libsdl2-net-dev -y`  
+`sudo apt install libsdl2-dev libsdl2-{gfx,ttf,mixer,net,image}-dev -y`  
 This can automatically download the stable development libs that can use when developing a project.  
 ###  ArchLinux/Manjaro
 `sudo pacman -S sdl2-devel sdl2_{gfx,ttf,mixer,net,image}-devel`  
@@ -33,7 +33,10 @@ Also can help you install.
 See the website of libsdl to find the way to build the dependences.  
 
 ## Notice
+<del>
 ***We don't use go mod in this package (that means need to turn off GO111MODULE)***  
 > type `go env -w GO111MODULE='off'` to turn it off  
 > or set `GOPATH` first and `go env -w GO111MODULE='auto'` to let go automatically choose whether use GOPATH or GO MODULE.  
-**Maybe when the project is fully developed, i'll change it into newest go mod**
+**Maybe when the project is fully developed, i'll change it into newest go mod**  
+</del>
+Now we use GOMODULE instead of classic GOPATH because it's more convenient ^_^

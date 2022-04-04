@@ -10,5 +10,8 @@ tmp
 *.swo
 
 main
+jGui
 T*
 log.txt
+
+*.vim
