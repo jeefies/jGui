@@ -88,7 +88,7 @@ func init() {
 
 // Create an Event instance (a pointer)
 func NewEvent() (*Event) {
-	return &Event{}
+	return new(Event)
 }
 
 // Poll a event from sdl events list

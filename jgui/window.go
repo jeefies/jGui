@@ -7,6 +7,12 @@ import (
 	"jGui/sdl"
 )
 
+var wins map[int](*Window)
+
+func init() {
+	wins = make(map[int] (*Window))
+}
+
 func CreateWindow(title string, w, h int, flags uint32) (jw *Window) {
 	var err error
 	jw = new(Window)
@@ -24,19 +30,22 @@ func CreateWindow(title string, w, h int, flags uint32) (jw *Window) {
 
 	jw.id = win.Id()
 	jw.update_mode = WIN_UPDATE_SURFACE
+	jw.current_child = 0 
 	jw.childs = make([]Widget, 0, 10)
 	jw.areas = make([](*Rect), 0, 10)
 
 	jw.bgColor = BLACK
 
+	wins[int(jw.id)] = jw
+
 	return
 }
 
-func (w *Window) scr() (*Screen) {
-	return w.win.GetSurface()
+func (w *Window) GetOriginScreen() (*Screen) {
+	return w._scr
 }
 
-func (w *Window) ChangeUpdateMode(flag uint8) error {
+func (w *Window) SetUpdateMode(flag uint8) error {
 	switch flag {
 	case WIN_UPDATE_SURFACE:
 		w.update_mode = WIN_UPDATE_SURFACE
@@ -48,8 +57,12 @@ func (w *Window) ChangeUpdateMode(flag uint8) error {
 	return nil
 }
 
+func (w *Window) GetUpdateMode() uint8 {
+	return w.update_mode
+}
+
 func (w *Window) CopyToOrigin() {
-	s := w.scr()
+	s := w.GetScreen()
 
 	ww, wh := w.win.GetSize()
 	r := sdl.NewRect(0, 0, ww, wh)
@@ -74,7 +87,7 @@ func (w *Window) RenderScreen() {
     var err error
 
 	w.CopyToOrigin()
-    text, err := w.ren.CreateTextureFromSurface(w.scr())
+    text, err := w.ren.CreateTextureFromSurface(w.GetScreen())
     check(err)
 
     w.ren.Clear()
@@ -90,7 +103,7 @@ func (w *Window) Close() {
 }
 
 func (w Window) GetScreen() *sdl.Surface {
-	return w._scr
+	return w.win.GetSurface()
 }
 
 func (win *Window) Register(wg Widget, x, y, w, h int) int {
@@ -99,21 +112,56 @@ func (win *Window) Register(wg Widget, x, y, w, h int) int {
 	win.childs = append(win.childs, wg)
 	win.areas = append(win.areas, area)
 
+	// No 0 id
 	return len(win.childs)
 }
 
 func (w *Window) Update() {
-	scr := w.GetScreen()
+	scr := w.GetOriginScreen()
 	for i, wg := range w.childs {
 		wg.Draw(scr, w.areas[i].Copy())
 	}
 }
 
-func (w *Window) UpdateWidget(id int) error {
-	if (0 < id) || (id >= len(w.childs)) {
+func (w *Window) UpdateWidget(id uint32) error {
+	if (0 < int(id)) || (int(id) >= len(w.childs)) {
 		return sdl.NewSDLError("Not valid Id")
 	}
-	w.childs[id].Draw(w.GetScreen(), w.areas[id].Copy())
+	w.childs[id].Draw(w.GetOriginScreen(), w.areas[id].Copy())
 
 	return nil
+}
+
+func (w *Window) GetWidget(id uint32) (wg Widget, err error) {
+	if 0 < int(id) || int(id) >= len(w.childs) {
+		err = sdl.NewSDLError("Not Valid Id")
+		return
+	}
+	wg = w.childs[id]
+	return
+}
+
+func (w *Window) GetWidgetArea(id uint32) (area *Rect, err error) {
+	if 0 < int(id) || int(id) >= len(w.childs) {
+		err = sdl.NewSDLError("Not Valid Id")
+		return
+	}
+	area = w.areas[id].Copy()
+	return
+}
+
+func (w *Window) SendEvent(id uint32, we WidgetEvent) {
+	if 0 < int(id) || int(id) >= len(w.childs) {
+		return
+	}
+	w.childs[id].Call(we)
+}
+
+func GetWindowById(id uint32) (w *Window) {
+	var ok bool
+	if w, ok = wins[int(id)]; ok {
+		return
+	}
+	w = nil
+	return
 }

@@ -30,9 +30,7 @@ const (
 
 type WidgetEvent = uint8
 const (
-	WE_ACTIVE WidgetEvent = iota
-	WE_DEACTIVE
-	WE_IN
+	WE_IN WidgetEvent = iota
 	WE_OUT
 	WE_RESIZE
 )

@@ -23,17 +23,18 @@ var DefaultABg = WHITE
 // type Color = sdl.Color
 
 type Label struct {
-	text string
-	font_size int
-	align int
+	Text string
+	FontSize int
+	Align int
 	w, h int
 	Fg, Bg Color
 	Afg, Abg Color // Active fg, Active bg
+	BorderWidth int
 
 	actived bool
 	sur *sdl.Surface
 
-	parent *Window
+	Parent *Window
 	id int
 }
 
@@ -52,8 +53,8 @@ func NewLabel(text string, font_size int, colors ...Color) (*Label) {
 	}
 
 	lb := new(Label)
-	lb.text = text
-	lb.font_size = font_size
+	lb.Text = text
+	lb.FontSize = font_size
 	w, h, err := font.GuessSize(text)
 	check(err)
 	lb.w = w + 6
@@ -76,7 +77,7 @@ func NewLabel(text string, font_size int, colors ...Color) (*Label) {
 	lb.sur = nil
 	lb.id = -1
 
-	lb.align = ALIGN_CENTER
+	lb.Align = ALIGN_CENTER
 
 	return lb
 }
@@ -84,6 +85,21 @@ func NewLabel(text string, font_size int, colors ...Color) (*Label) {
 func (lb *Label) Size() (w, h int) {
 	w, h = lb.w, lb.h
 	return
+}
+
+func (lb *Label) Width() int {
+	return lb.w
+}
+func (lb *Label) Height() int {
+	return lb.h
+} 
+func (lb *Label) SetWidth(w int) int {
+	lb.w = ABS(w)
+	return lb.w
+}
+func (lb *Label) SetHeight(h int) int {
+	lb.h = ABS(h)
+	return lb.h
 }
 
 func (l *Label) Draw(sur *Screen, area * Rect) {
@@ -98,7 +114,7 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 
 	// Get Text Surface to fill
 	if (l.sur == nil) {
-		l.sur, err = fontCache[l.font_size].RenderText(l.text, fg)
+		l.sur, err = fontCache[l.FontSize].RenderText(l.Text, fg)
 		check(err)
 	}
 	l.w, l.h = l.sur.Size()
@@ -116,7 +132,7 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 	}
 
 	{ // Draw Text
-		switch l.align {
+		switch l.Align {
 		case ALIGN_LEFT:
 			area.x += 3
 		case ALIGN_RIGHT:
@@ -146,14 +162,14 @@ func (l Label) Id() int {
 
 func (l *Label) Pack(w *Window, area * Rect) {
 	l.id = w.Register(l, area.x, area.y, MAX(area.w, l.w), MAX(area.h, l.h))
-	l.parent = w
+	l.Parent = w
 }
 
 func (l *Label) Configure(method string, value interface{}) {
 	switch method {
 	case "align":
 		if val, ok := value.(int); ok {
-			l.align = val
+			l.Align = val
 		} else { panic(sdl.NewSDLError("Not Valid config value")) }
 	case "bg":
 		if val, ok := value.(Color); ok {
@@ -173,16 +189,16 @@ func (l *Label) Configure(method string, value interface{}) {
 		} else { panic(sdl.NewSDLError("Not Valid config value")) }
 	case "text":
 		if val, ok := value.(string); ok {
-			l.text = val
-			w, h, err := fontCache[l.font_size].GuessSize(l.text)
+			l.Text = val
+			w, h, err := fontCache[l.FontSize].GuessSize(l.Text)
 			check(err)
 			l.w = w + 6
 			l.h = h + 6
 		} else { panic(sdl.NewSDLError("Not Valid config value")) }
 	case "font_size":
 		if val, ok := value.(int); ok {
-			l.font_size = val
-			w, h, err := fontCache[l.font_size].GuessSize(l.text)
+			l.FontSize = val
+			w, h, err := fontCache[l.FontSize].GuessSize(l.Text)
 			check(err)
 			l.w = w + 6
 			l.h = h + 6

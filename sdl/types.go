@@ -42,7 +42,6 @@ func (pos Point) Equal(p Point) bool {
 	return pos.X == p.X && pos.Y == p.Y
 }
 
-
 type SDLError struct {
 	errormsg string
 }

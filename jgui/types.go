@@ -5,8 +5,12 @@ import (
 )
 
 type Screen = sdl.Surface
-type Point = sdl.Point
 type Color = sdl.Color
+
+type Point struct {
+	X, Y int
+}
+
 type Rect struct {
 	x, y, w, h int
 }
@@ -17,6 +21,11 @@ type Widget interface {
 	// Replace(x, y int)
 	Call(e WidgetEvent)
 	Draw(sur *Screen, area * Rect)
+
+	Width() int
+	Height() int
+	SetWidth(w int) int
+	SetHeight(h int) int
 }
 
 type Window struct {
@@ -29,7 +38,7 @@ type Window struct {
 
 	bgColor Color
 
-	current_child Widget
+	current_child uint32  // Id
 	childs []Widget
 	areas [](*Rect)
 }
@@ -48,4 +57,11 @@ func NewRect(x, y, w, h int) *Rect {
 
 func (r Rect) Copy() (*Rect) {
 	return NewRect(r.x, r.y, r.w, r.h)
+}
+
+func (p Point) IsIn(r *Rect) bool {
+	if p.X >= r.x && p.X <= r.x + r.w && p.Y >= r.y && p.Y <= r.y + r.h {
+		return true
+	}
+	return false
 }
