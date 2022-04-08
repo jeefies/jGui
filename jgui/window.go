@@ -4,6 +4,8 @@
 package jgui
 
 import (
+	"strconv" 
+
 	"jGui/sdl"
 )
 
@@ -13,7 +15,7 @@ func init() {
 	wins = make(map[int] (*Window))
 }
 
-func CreateWindow(title string, w, h int, flags uint32) (jw *Window) {
+func CreateWindow(title string, w, h int, flags ID) (jw *Window) {
 	var err error
 	jw = new(Window)
 	win, err := sdl.CreateWindowWithFlags(title, w, h, WINPOS_CENTERED, WINPOS_CENTERED, flags)
@@ -30,7 +32,7 @@ func CreateWindow(title string, w, h int, flags uint32) (jw *Window) {
 
 	jw.id = win.Id()
 	jw.update_mode = WIN_UPDATE_SURFACE
-	jw.current_child = 0 
+	jw.current_child = ID_NULL
 	jw.childs = make([]Widget, 0, 10)
 	jw.areas = make([](*Rect), 0, 10)
 
@@ -106,14 +108,14 @@ func (w Window) GetScreen() *sdl.Surface {
 	return w.win.GetSurface()
 }
 
-func (win *Window) Register(wg Widget, x, y, w, h int) int {
-	area := NewRect(x, y, w, h)
+func (win *Window) Register(wg Widget, x, y, w, h int) ID {
+	area := NewRect(x, y, wg.SetWidth(w), wg.SetHeight(h))
 
 	win.childs = append(win.childs, wg)
 	win.areas = append(win.areas, area)
 
 	// No 0 id
-	return len(win.childs)
+	return ID(len(win.childs) - 1)
 }
 
 func (w *Window) Update() {
@@ -123,41 +125,42 @@ func (w *Window) Update() {
 	}
 }
 
-func (w *Window) UpdateWidget(id uint32) error {
-	if (0 < int(id)) || (int(id) >= len(w.childs)) {
-		return sdl.NewSDLError("Not valid Id")
+func (w *Window) UpdateWidget(id ID) error {
+	if int(id) >= len(w.childs) {
+		return sdl.NewSDLError("Not Valid Id: " + strconv.Itoa(int(id)))
 	}
 	w.childs[id].Draw(w.GetOriginScreen(), w.areas[id].Copy())
 
 	return nil
 }
 
-func (w *Window) GetWidget(id uint32) (wg Widget, err error) {
-	if 0 < int(id) || int(id) >= len(w.childs) {
-		err = sdl.NewSDLError("Not Valid Id")
+func (w *Window) GetWidget(id ID) (wg Widget, err error) {
+	if int(id) >= len(w.childs) {
+		err = sdl.NewSDLError("Not Valid Id: " + strconv.Itoa(int(id)))
 		return
 	}
 	wg = w.childs[id]
 	return
 }
 
-func (w *Window) GetWidgetArea(id uint32) (area *Rect, err error) {
-	if 0 < int(id) || int(id) >= len(w.childs) {
-		err = sdl.NewSDLError("Not Valid Id")
+func (w *Window) GetWidgetArea(id ID) (area *Rect, err error) {
+	if int(id) >= len(w.childs) {
+		err = sdl.NewSDLError("Not Valid Id: " + strconv.Itoa(int(id)))
 		return
 	}
 	area = w.areas[id].Copy()
 	return
 }
 
-func (w *Window) SendEvent(id uint32, we WidgetEvent) {
-	if 0 < int(id) || int(id) >= len(w.childs) {
+func (w *Window) SendEvent(id ID, we WidgetEvent) {
+	if int(id) >= len(w.childs) {
 		return
 	}
+	logger.Printf("Win %d Widget %d Call Event", w.id, id)
 	w.childs[id].Call(we)
 }
 
-func GetWindowById(id uint32) (w *Window) {
+func GetWindowById(id ID) (w *Window) {
 	var ok bool
 	if w, ok = wins[int(id)]; ok {
 		return

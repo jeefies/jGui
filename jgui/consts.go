@@ -2,6 +2,8 @@ package jgui
 
 import sdl "jGui/sdl"
 
+const ID_NULL ID = ^uint32(0)
+
 const (
 	WIN_FULLSCREEN   = sdl.WIN_FULLSCREEN
 	WIN_OPENGL       = sdl.WIN_OPENGL
@@ -36,7 +38,17 @@ const (
 )
 
 const (
-	ALIGN_LEFT = iota
+	ALIGN_CENTER = 1 << iota
+	ALIGN_LEFT
 	ALIGN_RIGHT
-	ALIGN_CENTER
+	ALIGN_TOP
+	ALIGN_BOTTOM
+)
+
+const (
+	_ = 1 << iota
+	REL_X
+	REL_Y
+	REL_W
+	REL_H
 )

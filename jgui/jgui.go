@@ -45,7 +45,7 @@ func Mainloop() {
 	}
 
 	e := sdl.NewEvent()
-	timer := time.NewTimer(time.Second / FPS)
+	timer := time.NewTicker(time.Second / FPS)
 
 	for {
 		if !e.Poll() {
@@ -63,27 +63,35 @@ func Mainloop() {
 			mx, my := e.MousePosition()
 			var mousep = Point{mx, my}
 
-			if (win.current_child != 0) {
-				area, _ := win.GetWidgetArea(win.current_child)
+			// logger.Printf("Current Child ID %u", win.current_child)
+			if (win.current_child != ID_NULL) {
+				area, err := win.GetWidgetArea(win.current_child)
+				if (err != nil) {
+					panic(err)
+				}
 
-				if !mousep.IsIn(area) {
-					move_out = false
+				if mousep.IsIn(area) {
+					goto MOTION_CLEAR_UP
+				} else {
+					win.SendEvent(win.current_child, WE_OUT)
 				}
 			}
 
 			if move_out {
-				win.SendEvent(win.current_child, WE_OUT)
-				for idi, area := range win.areas {
-					id := uint32(idi)
-					if mousep.IsIn(area) {
+				for index := range win.areas {
+					id := ID(index)
+					if mousep.IsIn(win.areas[index]) {
 						win.current_child = id
 						win.SendEvent(id, WE_IN)
-						break
+						goto MOTION_CLEAR_UP
 					}
 				} // for loop
-				win.current_child = 0
 			}
 			// if not move_out
+			win.current_child = ID_NULL
+
+			MOTION_CLEAR_UP: 
+			// logger.Printf("Change to %u", win.current_child)
 			
 
 		} // swicth match
