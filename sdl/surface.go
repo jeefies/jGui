@@ -28,11 +28,11 @@ int j_border(SDL_Surface * sur, SDL_Rect * area, int width, Uint32 color) {
 			pixels[get_place(ppr, x + i, y + j)] = color;
 		}
 		for (int j = 0; j < width; j++) {
-			pixels[get_place(ppr, x + i, y + h - j)] = color;
+			pixels[get_place(ppr, x + i, y + h - j - 1)] = color;
 		}
 	}
 
-	for (int i = width; i < h - width + 1; i++) {
+	for (int i = width; i < h - width; i++) {
 		for (int j = 0; j < width; j++) {
 			pixels[get_place(ppr, x + j, y + i)] = color;
 		}

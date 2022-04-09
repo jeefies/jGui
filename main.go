@@ -21,6 +21,16 @@ func TestWindow1() *jgui.Window {
 	jgui.NewLabel("D", fontSize).Configure("align", jgui.ALIGN_BOTTOM).Pack(win, jgui.NewRect(155, 5, 40, 45))
 
 	lb1.BackgroundColor = jgui.Color{0, 255, 0, 0}
+	lb1.RegisterEvent(jgui.WE_FOCUSIN, func(we jgui.WidgetEvent, wg jgui.Widget) {
+		lb := wg.(*jgui.Label)
+		lb.TextColor = jgui.BLUE
+		lb.Clear()
+	})
+	lb1.RegisterEvent(jgui.WE_FOCUSOUT, func(we jgui.WidgetEvent, wg jgui.Widget) {
+		lb := wg.(*jgui.Label)
+		lb.TextColor = jgui.WHITE
+		lb.Clear()
+	})
 
 	return win
 }
@@ -46,7 +56,12 @@ func main() {
 	go func() {
 		time.Sleep(time.Second * 2)
 		lb1, _ := win.GetWidget(0)
-		lb1.(*jgui.Label).Configure("align", jgui.ALIGN_LEFT | jgui.ALIGN_TOP)
+		lb := lb1.(*jgui.Label)
+		lb.Configure("align", jgui.ALIGN_LEFT | jgui.ALIGN_TOP)
+		lb.Configure("font size", 16)
+
+		time.Sleep(time.Second * 2)
+		win.Move(lb.Id(), jgui.NewRelRect(5, 0.5, 45, 45, jgui.REL_Y))
 	}()
 
 	jgui.Mainloop()

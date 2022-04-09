@@ -30,11 +30,19 @@ const (
 	RENDERER_ACCELERATED   = sdl.RENDERER_ACCELERATED
 )
 
-type WidgetEvent = uint8
+type WidgetEvent = uint16
 const (
 	WE_IN WidgetEvent = iota
 	WE_OUT
 	WE_RESIZE
+	WE_FOCUSIN
+	WE_FOCUSOUT
+	WE_CLICKL
+	WE_CLICKM
+	WE_CLICKR
+	WE_CLICK_DOUBLEL
+	WE_CLICK_DOUBLEM
+	WE_CLICK_DOUBLER
 )
 
 const (

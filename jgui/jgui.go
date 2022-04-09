@@ -40,6 +40,8 @@ func Mainloop() {
 	e := sdl.NewEvent()
 	timer := time.NewTicker(time.Second / FPS)
 
+	var eTime MouseClickEvent
+
 	for {
 		if !e.Poll() {
 			time.Sleep(1e5) // 1e9 is a second, that mean sleep 1/1000s
@@ -63,7 +65,7 @@ func Mainloop() {
 					panic(err)
 				}
 
-				if mousep.IsIn(area) {
+				if mousep.IsIn(area.MapVH(win.Size())) {
 					goto MOTION_CLEAR_UP
 				} else {
 					win.SendEvent(win.current_child, WE_OUT)
@@ -73,7 +75,7 @@ func Mainloop() {
 			if move_out {
 				for index := range win.areas {
 					id := ID(index)
-					if mousep.IsIn(win.areas[index]) {
+					if mousep.IsIn(win.areas[index].MapVH(win.Size())) {
 						win.current_child = id
 						win.SendEvent(id, WE_IN)
 						goto MOTION_CLEAR_UP
@@ -84,8 +86,7 @@ func Mainloop() {
 			win.current_child = ID_NULL
 
 			MOTION_CLEAR_UP: 
-			logger.Printf("Change to %u", win.current_child)
-			
+			win.Show()
 		case sdl.WINDOWS_EVENT:
 			win := GetWindowById(e.WinId())
 			switch e.WinEvent() {
@@ -95,7 +96,50 @@ func Mainloop() {
 				fallthrough
 			case sdl.WINDOW_SIZE_CHANGED:
 				win.Clear()
-				win.Update()
+				win.SendEventALL(WE_RESIZE)
+			}
+
+		case sdl.MOUSE_DOWN:
+			// win := GetWindowById(e.WinId())
+			eTime.Down()
+			eTime.lastWinId = e.WinId()
+			eTime.lastButton = e.GetButton()
+
+		case sdl.MOUSE_UP:
+			if eTime.lastWinId != e.WinId() {
+				break
+			}
+
+			if eTime.lastButton != e.GetButton() {
+				break
+			}
+			
+			win := GetWindowById(e.WinId())
+			ct := eTime.Up()
+
+			var CLICK, DCLICK WidgetEvent
+			switch e.GetButton() {
+			case sdl.BUTTON_LEFT:
+				CLICK = WE_CLICKL
+				DCLICK = WE_CLICK_DOUBLEL
+			case sdl.BUTTON_MIDDLE:
+				CLICK = WE_CLICKM
+				DCLICK = WE_CLICK_DOUBLEM
+			case sdl.BUTTON_RIGHT:
+				CLICK = WE_CLICKR
+				DCLICK = WE_CLICK_DOUBLER
+			}
+
+			if ct != 0 { // Click
+				win.SendEvent(win.current_child, CLICK)
+
+				if win.focus_child != win.current_child {
+					win.SendEvent(win.focus_child, WE_FOCUSOUT)
+					win.focus_child = win.current_child
+					win.SendEvent(win.current_child, WE_FOCUSIN)
+				} else if ct > 0 {
+					win.SendEvent(win.current_child, DCLICK)
+				}
 			}
 
 		} // swicth match

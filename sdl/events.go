@@ -29,6 +29,10 @@ void getMousePositon(SDL_Event * e, int * x, int * y) {
     *x = e->motion.x;
     *y = e->motion.y;
 }
+
+unsigned char getButton(SDL_Event * e) {
+	return e->button.button;
+}
 */
 import "C"
 
@@ -61,6 +65,10 @@ const (
     MOUSE_DOWN          uint32 = uint32(C.SDL_MOUSEBUTTONDOWN)
     MOUSE_UP            uint32 = uint32(C.SDL_MOUSEBUTTONUP)
     MOUSE_WHEEL         uint32 = uint32(C.SDL_MOUSEWHEEL)
+
+	BUTTON_LEFT         uint8 = uint8(C.SDL_BUTTON_LEFT)
+	BUTTON_MIDDLE       uint8 = uint8(C.SDL_BUTTON_MIDDLE)
+	BUTTON_RIGHT        uint8 = uint8(C.SDL_BUTTON_RIGHT)
 
 	// Special keys
 	KLEFT               uint32 = uint32(C.SDLK_LEFT)
@@ -142,7 +150,13 @@ func (e *Event) MousePosition() (int, int) {
     C.getMousePositon(e, &x, &y)
     return int(x), int(y)
 }
-
-func GetMousePosition() (int,  int) {
-    return mx, my
+func (e *Event) GetButton() uint8 {
+	return uint8(C.getButton(e))
 }
+
+func GetRootMousePosition() (int,  int) {
+    var x, y C.int
+	C.SDL_GetGlobalMouseState(&x, &y)
+	return int(x), int(y)
+}
+

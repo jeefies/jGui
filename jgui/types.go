@@ -1,6 +1,8 @@
 package jgui
 
 import (
+	"time"
+
     "jGui/sdl"
 )
 
@@ -23,11 +25,24 @@ type Widget interface {
 	// Replace(x, y int)
 	Call(e WidgetEvent)
 	Draw(sur *Screen, area * Rect)
+	Clear()
+	Update()
 
 	Width() int
 	Height() int
 	SetWidth(w int) int
 	SetHeight(h int) int
+
+	RegisterEvent(we WidgetEvent, f func(we WidgetEvent, wg Widget))
+}
+
+type MouseClickEvent struct {
+	rootX, rootY int
+	lastDown time.Time
+	lastUp time.Time
+	count int
+	lastWinId ID
+	lastButton uint8
 }
 
 type Window struct {
@@ -41,6 +56,7 @@ type Window struct {
 	BackgroundColor Color
 
 	current_child ID  // Id
+	focus_child ID // Id
 	childs []Widget
 	areas [](*Rect)
 }
@@ -118,4 +134,44 @@ func (p Point) IsIn(r *Rect) bool {
 		return true
 	}
 	return false
+}
+
+func (me *MouseClickEvent) Down() int {
+	n := time.Now()
+	ln := me.lastUp
+	me.lastDown = n
+	if ln == (time.Time{}) {
+		me.count = 0
+		return 0
+	}
+
+	if n.Sub(ln) < 4e8 {
+		me.count += 1
+		return me.count
+	}
+
+	me.count = 0
+	return 0
+}
+
+func (me *MouseClickEvent) Up() int {
+	n := time.Now()
+	ld := me.lastDown
+
+	// Check for double click
+	ln := me.lastUp
+	me.lastUp = n
+	// 2/5 second
+	if ln != (time.Time{}) && n.Sub(ln) < 4e8 {
+		me.count += 1
+		return me.count
+	}
+
+	// Check for click
+	if n.Sub(ld) < 6e8 {
+		return -1
+	}
+
+	me.count = 0
+	return 0
 }

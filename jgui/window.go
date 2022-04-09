@@ -33,6 +33,7 @@ func CreateWindow(title string, w, h int, flags ID) (jw *Window) {
 	jw.id = win.Id()
 	jw.update_mode = WIN_UPDATE_SURFACE
 	jw.current_child = ID_NULL
+	jw.focus_child = ID_NULL
 	jw.childs = make([]Widget, 0, 10)
 	jw.areas = make([](*Rect), 0, 10)
 
@@ -144,7 +145,7 @@ func (w *Window) UpdateWidget(id ID) error {
 	if int(id) >= len(w.childs) {
 		return sdl.NewSDLError("Not Valid Id: " + strconv.Itoa(int(id)))
 	}
-	w.childs[id].Draw(w.GetOriginScreen(), w.areas[id].Copy())
+	w.childs[id].Draw(w.GetOriginScreen(), w.areas[id].MapVH(w.Width(), w.Height()))
 
 	return nil
 }
@@ -168,11 +169,20 @@ func (w *Window) GetWidgetArea(id ID) (area *Rect, err error) {
 }
 
 func (w *Window) SendEvent(id ID, we WidgetEvent) {
+	// if id == ID_NULL { return } this can be included in following line
 	if int(id) >= len(w.childs) {
 		return
 	}
-	logger.Printf("Win %d Widget %d Call Event", w.id, id)
+	logger.Printf("Win %d Widget %d Call Event %d", w.id, id, we)
 	w.childs[id].Call(we)
+}
+
+func (w *Window) SendEventALL(we WidgetEvent) {
+	logger.Printf("Win %d All widget Call Event", w.id)
+
+	for i := range w.childs {
+		w.childs[i].Call(we)
+	}
 }
 
 func GetWindowById(id ID) (w *Window) {
@@ -182,4 +192,15 @@ func GetWindowById(id ID) (w *Window) {
 	}
 	w = nil
 	return
+}
+
+func (w *Window) Move(id ID, area *Rect) {
+	if int(id) >= len(w.childs) {
+		return
+	}
+
+	wg, _ := w.GetWidget(id)
+	wg.Clear()
+	w.areas[id] = area
+	wg.Draw(w.GetOriginScreen(), area.MapVH(w.Width(), w.Height()))
 }
