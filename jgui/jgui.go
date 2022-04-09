@@ -8,15 +8,8 @@ import (
 
 var FPS time.Duration = 30
 
-func MAX(x, y int) int {
-	if (x < y) {
-		return y
-	}
-	return x
-}
-
-func MIN(x, y int) int {
-	if (x < y) {
+func MAX (x, y int) int {
+	if (x > y) {
 		return x
 	}
 	return y
@@ -57,8 +50,8 @@ func Mainloop() {
 		case sdl.QUIT:
 			goto MainEnd
 		case sdl.MOUSE_MOTION:
+			win := GetWindowById(e.WinId())
 			var move_out bool = true
-			var win = GetWindowById(e.WinId())
 
 			mx, my := e.MousePosition()
 			var mousep = Point{mx, my}
@@ -91,8 +84,19 @@ func Mainloop() {
 			win.current_child = ID_NULL
 
 			MOTION_CLEAR_UP: 
-			// logger.Printf("Change to %u", win.current_child)
+			logger.Printf("Change to %u", win.current_child)
 			
+		case sdl.WINDOWS_EVENT:
+			win := GetWindowById(e.WinId())
+			switch e.WinEvent() {
+			case sdl.WINDOW_CLOSE:
+				win.Close()
+			case sdl.WINDOW_RESIZED:
+				fallthrough
+			case sdl.WINDOW_SIZE_CHANGED:
+				win.Clear()
+				win.Update()
+			}
 
 		} // swicth match
 
@@ -100,8 +104,8 @@ func Mainloop() {
 		// Refresh windows
 		select {
 		case <-timer.C:
-			for _, win := range wins {
-				win.Show()
+			for _, cw := range wins {
+				cw.Show()
 			}
 		default:
 		}

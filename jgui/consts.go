@@ -46,9 +46,9 @@ const (
 )
 
 const (
-	_ = 1 << iota
-	REL_X
+	REL_X = 1 << iota
 	REL_Y
 	REL_W
 	REL_H
+	REL_FLAGS = 0b1111
 )

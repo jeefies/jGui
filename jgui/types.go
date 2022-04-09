@@ -13,7 +13,7 @@ type Point struct {
 }
 
 type Rect struct {
-	x, y, w, h int
+	x, y, w, h float64
 	isRel uint8
 }
 
@@ -38,15 +38,16 @@ type Window struct {
 	id ID
 	update_mode uint8
 
-	bgColor Color
+	BackgroundColor Color
 
 	current_child ID  // Id
 	childs []Widget
 	areas [](*Rect)
 }
 
+
 func (r Rect) ToSDL() *sdl.Rect {
-	return sdl.NewRect(r.x, r.y, r.w, r.h)
+	return sdl.NewRect(int(r.x), int(r.y), int(r.w), int(r.h))
 }
 
 func (r Rect) Pout() {
@@ -58,16 +59,52 @@ func (p Point) Pout() {
 }
 
 func NewRect(x, y, w, h int) *Rect {
-	return &Rect{x, y, w, h, 0}
+	return &Rect{float64(x), float64(y), float64(w), float64(h), 0}
+}
+
+func NewRelRect(x, y, w, h float64, relFlags uint8) *Rect {
+	return &Rect{x, y, w, h, relFlags & REL_FLAGS}
 }
 
 func (r Rect) Copy() (*Rect) {
-	return NewRect(r.x, r.y, r.w, r.h)
+	return NewRelRect(r.x, r.y, r.w, r.h, 0)
 }
 
-func (r Rect) MapVH(v, h int) (*Rect) {
+func (r Rect) X() int {
+	return int(r.x)
+}
+
+func (r Rect) Y() int {
+	return int(r.y)
+}
+
+func (r Rect) W() int {
+	return int(r.w)
+}
+
+func (r Rect) H() int {
+	return int(r.h)
+}
+
+func (r *Rect) SetX(x int) {
+	r.x = float64(x)
+}
+func (r *Rect) SetW(x int) {
+	r.w = float64(x)
+}
+func (r *Rect) SetY(x int) {
+	r.y = float64(x)
+}
+func (r *Rect) SetH(x int) {
+	r.h = float64(x)
+}
+
+func (r Rect) MapVH(v_i, h_i int) (*Rect) {
 	nr := r.Copy()
-	if r.isRel & REL_X == REL_X { nr.x *= v	}
+	v := float64(v_i)
+	h := float64(h_i)
+
+	if r.isRel & REL_X == REL_X { nr.x *= v }
 	if r.isRel & REL_Y == REL_Y { nr.y *= h }
 	if r.isRel & REL_W == REL_W { nr.w *= v }
 	if r.isRel & REL_H == REL_H { nr.h *= h }
@@ -75,7 +112,9 @@ func (r Rect) MapVH(v, h int) (*Rect) {
 }
 
 func (p Point) IsIn(r *Rect) bool {
-	if p.X >= r.x && p.X <= r.x + r.w && p.Y >= r.y && p.Y <= r.y + r.h {
+	x := float64(p.X)
+	y := float64(p.Y)
+	if x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h {
 		return true
 	}
 	return false

@@ -15,10 +15,13 @@ var (
 	GREEN = Color{0, 255, 0, 0}
 	BLUE = Color{0, 0, 255, 0}
 )
-var DefaultFg = WHITE
-var DefaultBg = WHITE
-var DefaultAFg = RED
-var DefaultABg = WHITE
+var DefaultTextColor = WHITE
+var DefaultBackgroundColor = BLACK
+var DefaultBorderColor = WHITE
+
+var DefaultActiveTextColor = WHITE
+var DefaultActiveBackgroundColor = RED
+var DefaultActiveBorderColor = WHITE
 
 // type Color = sdl.Color
 
@@ -27,10 +30,11 @@ type BaseWidget struct {
 	FontSize int
 	Align int
 	w, h int
-	Fg, Bg Color
-	Afg, Abg Color // Active fg, Active bg
 	BorderWidth int
 	Padding int
+
+	TextColor, BackgroundColor, BorderColor Color
+	ActiveTextColor, ActiveBackgroundColor, ActiveBorderColor Color
 
 	id ID
 	Parent *Window
@@ -67,18 +71,32 @@ func NewLabel(text string, font_size int, colors ...Color) (*Label) {
 	lb.min_w = w 
 	lb.min_h = h
 
-	lb.Fg = DefaultFg
-	lb.Bg = DefaultBg
-	lb.Afg = DefaultFg
-	lb.Abg = DefaultBg
+	lb.TextColor = DefaultTextColor
+	lb.BackgroundColor = DefaultBackgroundColor
+	lb.BorderColor = DefaultBorderColor
+
+	lb.ActiveTextColor = DefaultActiveTextColor
+	lb.ActiveBorderColor = DefaultActiveBorderColor
+	lb.ActiveBackgroundColor = DefaultActiveBackgroundColor
+
 	switch len(colors) {
+	case 6:
+		lb.ActiveBorderColor = colors[5]
+		fallthrough
+	case 5:
+		lb.ActiveBackgroundColor = colors[4]
+		fallthrough
 	case 4:
-		lb.Afg = colors[3]
-		lb.Abg = colors[4]
+		lb.ActiveTextColor = colors[3]
+		fallthrough
+	case 3:
+		lb.BorderColor = colors[2]
 		fallthrough
 	case 2:
-		lb.Fg = colors[0]
-		lb.Bg = colors[1]
+		lb.BackgroundColor = colors[1]
+		fallthrough
+	case 1:
+		lb.TextColor = colors[0]
 	}
 
 	lb.sur = nil
@@ -122,28 +140,39 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 	var err error
 
 	// Check for label color
-	fg, bg := l.Fg, l.Bg
+	var textColor, backgroundColor, borderColor Color
 	if l.actived {
-		fg = l.Afg
-		bg = l.Abg
+		textColor = l.ActiveTextColor
+		backgroundColor = l.ActiveBackgroundColor
+		borderColor = l.ActiveBorderColor
+	} else {
+		textColor = l.TextColor
+		backgroundColor = l.BackgroundColor
+		borderColor = l.BorderColor
 	}
 
 	// Get Text Surface to fill
 	if (l.sur == nil) {
-		l.sur, err = fontCache[l.FontSize].RenderText(l.Text, fg)
+		l.sur, err = fontCache[l.FontSize].RenderText(l.Text, textColor)
 		check(err)
 	}
 	l.w, l.h = l.sur.Size()
 		
-	area.w = MAX(area.w, l.w + l.BorderWidth * 2 )
-	area.h = MAX(area.h, l.h + l.BorderWidth * 2 )
+	max := func (f float64, i_i int) float64 {
+		i := float64(i_i)
+		if (f < i) { return i }
+		return f
+	}
+
+	area.w = max(area.w, l.w + l.BorderWidth * 2 )
+	area.h = max(area.h, l.h + l.BorderWidth * 2 )
 
 	{ // Clear Origin
-		sur.Fill(area.ToSDL(), l.Parent.bgColor.Map(sur))
+		sur.Fill(area.ToSDL(), backgroundColor.Map(sur))
 	}
 
 	{ // Draw Border
-		sur.DrawBorder(area.ToSDL(), l.BorderWidth, bg)
+		sur.DrawBorder(area.ToSDL(), l.BorderWidth, borderColor)
 	}
 
 	{ // Draw Text
@@ -151,19 +180,19 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 		pdw := l.Padding
 
 		if l.Align & ALIGN_LEFT == ALIGN_LEFT {
-			area.x += bdw + pdw
+			area.SetX(area.X() + bdw + pdw)
 		} else if l.Align & ALIGN_RIGHT == ALIGN_RIGHT {
-			area.x = area.x + area.w - l.w - bdw - pdw
+			area.SetX(area.X() + area.W() - l.w - bdw - pdw)
 		} else {
-			area.x = area.x + area.w / 2 - l.w / 2
+			area.SetX(area.X() + area.W() / 2 - l.w / 2)
 		}
 
 		if l.Align & ALIGN_TOP == ALIGN_TOP {
-			area.y += bdw + pdw
+			area.SetY(area.Y() + bdw + pdw)
 		} else if l.Align & ALIGN_BOTTOM == ALIGN_BOTTOM {
-			area.y = area.y + area.h - l.h - bdw - pdw
+			area.SetY(area.Y() + area.H() - l.h - bdw - pdw)
 		} else {
-			area.y = area.y + area.h / 2 - l.h / 2
+			area.SetY(area.Y() + area.H() / 2 - l.h / 2)
 		}
 
 		err = sur.Blit(l.sur, area.ToSDL())
@@ -194,7 +223,7 @@ func (l Label) Id() ID {
 }
 
 func (l *Label) Pack(w *Window, area * Rect) *Label {
-	l.id = w.Register(l, area.x, area.y, MAX(area.w, l.w), MAX(area.h, l.h))
+	l.id = w.Register(l, area)
 	logger.Printf("Regist id %d", l.id)
 	l.Parent = w
 	return l
@@ -205,22 +234,6 @@ func (l *Label) Configure(method string, value interface{}) *Label {
 	case "align":
 		if val, ok := value.(int); ok {
 			l.Align = val
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "bg":
-		if val, ok := value.(Color); ok {
-			l.Bg = val
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "abg":
-		if val, ok := value.(Color); ok {
-			l.Abg = val
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "fg":
-		if val, ok := value.(Color); ok {
-			l.Fg = val
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "afg":
-		if val, ok := value.(Color); ok {
-			l.Afg = val
 		} else { panic(sdl.NewSDLError("Not Valid config value")) }
 	case "text":
 		if val, ok := value.(string); ok {
@@ -238,10 +251,6 @@ func (l *Label) Configure(method string, value interface{}) *Label {
 			l.w = w + 6
 			l.h = h + 6
 		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "border width":
-		if val, ok := value.(int); ok {
-			l.BorderWidth = val
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
 	}
 
 	if l.id != ID_NULL { 
@@ -251,7 +260,17 @@ func (l *Label) Configure(method string, value interface{}) *Label {
 	return l
 }
 
+func (l *Label) Update() (*Label) {
+	l.Clear()
+	l.Parent.UpdateWidget(l.id)
+	return l
+}
+
 func (l *Label) Clear() {
+	pt := l.Parent
+	area, _ := pt.GetWidgetArea(l.Id())
+	pt.GetOriginScreen().Fill(area.ToSDL(), pt.BackgroundColor.Map(pt.GetScreen()))
+
 	l.sur.Close()
 	l.sur = nil
 }

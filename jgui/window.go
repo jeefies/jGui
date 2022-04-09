@@ -9,10 +9,10 @@ import (
 	"jGui/sdl"
 )
 
-var wins map[int](*Window)
+var wins map[ID](*Window)
 
 func init() {
-	wins = make(map[int] (*Window))
+	wins = make(map[ID] (*Window))
 }
 
 func CreateWindow(title string, w, h int, flags ID) (jw *Window) {
@@ -36,9 +36,9 @@ func CreateWindow(title string, w, h int, flags ID) (jw *Window) {
 	jw.childs = make([]Widget, 0, 10)
 	jw.areas = make([](*Rect), 0, 10)
 
-	jw.bgColor = BLACK
+	jw.BackgroundColor = BLACK
 
-	wins[int(jw.id)] = jw
+	wins[jw.id] = jw
 
 	return
 }
@@ -75,6 +75,16 @@ func (w *Window) Size() (int, int) {
 	return w.win.GetSize()
 }
 
+func (w *Window) Width() int {
+	width, _ := w.Size()
+	return width
+}
+
+func (w *Window) Height() int {
+	_, h := w.Size()
+	return h
+}
+
 func (w *Window) Show() {
 	if (w.update_mode == WIN_UPDATE_SURFACE) {
 		w.CopyToOrigin()
@@ -99,18 +109,23 @@ func (w *Window) RenderScreen() {
 }
 
 func (w *Window) Close() {
+	logger.Printf("Window %d closed", w.id)
 	w.ren.Close()
 	w.win.Close()
 	w._scr.Close()
+
+	delete(wins, w.id)
+}
+
+func (w *Window) Clear() {
+	w.GetOriginScreen().Fill(nil, w.BackgroundColor.Map(w.GetOriginScreen()))
 }
 
 func (w Window) GetScreen() *sdl.Surface {
 	return w.win.GetSurface()
 }
 
-func (win *Window) Register(wg Widget, x, y, w, h int) ID {
-	area := NewRect(x, y, wg.SetWidth(w), wg.SetHeight(h))
-
+func (win *Window) Register(wg Widget, area *Rect) ID {
 	win.childs = append(win.childs, wg)
 	win.areas = append(win.areas, area)
 
@@ -121,7 +136,7 @@ func (win *Window) Register(wg Widget, x, y, w, h int) ID {
 func (w *Window) Update() {
 	scr := w.GetOriginScreen()
 	for i, wg := range w.childs {
-		wg.Draw(scr, w.areas[i].Copy())
+		wg.Draw(scr, w.areas[i].MapVH(w.Width(), w.Height()))
 	}
 }
 
@@ -148,7 +163,7 @@ func (w *Window) GetWidgetArea(id ID) (area *Rect, err error) {
 		err = sdl.NewSDLError("Not Valid Id: " + strconv.Itoa(int(id)))
 		return
 	}
-	area = w.areas[id].Copy()
+	area = w.areas[id].MapVH(w.Width(), w.Height())
 	return
 }
 
@@ -162,7 +177,7 @@ func (w *Window) SendEvent(id ID, we WidgetEvent) {
 
 func GetWindowById(id ID) (w *Window) {
 	var ok bool
-	if w, ok = wins[int(id)]; ok {
+	if w, ok = wins[id]; ok {
 		return
 	}
 	w = nil
