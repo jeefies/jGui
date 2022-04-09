@@ -33,11 +33,13 @@ func check(err error) {
 }
 
 func Mainloop() {
+	e := sdl.NewEvent()
 	for _, win := range wins {
 		win.Update()
+		win.Event = e
+		logger.Printf("win %d at %p", win.id, win)
 	}
 
-	e := sdl.NewEvent()
 	timer := time.NewTicker(time.Second / FPS)
 
 	var eTime MouseClickEvent
@@ -142,6 +144,25 @@ func Mainloop() {
 				}
 			}
 
+		case sdl.KEYUP:
+			win := GetWindowById(e.WinId())
+			if win == nil { break }
+
+			if win.focus_child != ID_NULL {
+				win.SendEvent(win.focus_child, WE_KEY)
+			} else {
+				win.SendEvent(win.current_child, WE_KEY)
+			}
+		case sdl.TEXT_EDITING:
+			win := GetWindowById(e.WinId())
+			if win == nil { break }
+
+			if (win.focus_child != ID_NULL) {
+				win.SendEvent(win.focus_child, WE_TEXT_EDITING)
+			}
+		case sdl.TEXT_INPUT:
+			win := GetWindowById(e.WinId())
+			win.SendEvent(win.focus_child, WE_TEXT_INPUT)
 		} // swicth match
 
 		SELECT_UPDATE:

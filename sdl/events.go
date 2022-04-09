@@ -33,6 +33,10 @@ void getMousePositon(SDL_Event * e, int * x, int * y) {
 unsigned char getButton(SDL_Event * e) {
 	return e->button.button;
 }
+
+char * getInputText(SDL_Event * e) {
+	return e->text.text;
+}
 */
 import "C"
 
@@ -43,6 +47,8 @@ const (
 	KEYUP               uint32 = uint32(C.SDL_KEYUP)
 	KEYDOWN             uint32 = uint32(C.SDL_KEYDOWN)
 	WINDOWS_EVENT       uint32 = uint32(C.SDL_WINDOWEVENT)
+	TEXT_EDITING        uint32 = uint32(C.SDL_TEXTEDITING)
+	TEXT_INPUT          uint32 = uint32(C.SDL_TEXTINPUT)
 
 	// Type of window events
 	WINDOW_SHOWN        uint32 = uint32(C.SDL_WINDOWEVENT_SHOWN)
@@ -160,3 +166,6 @@ func GetRootMousePosition() (int,  int) {
 	return int(x), int(y)
 }
 
+func (e *Event) InputText() string {
+	return C.GoString(C.getInputText(e))
+}

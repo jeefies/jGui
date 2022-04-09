@@ -59,6 +59,8 @@ type Window struct {
 	focus_child ID // Id
 	childs []Widget
 	areas [](*Rect)
+
+	Event * sdl.Event
 }
 
 

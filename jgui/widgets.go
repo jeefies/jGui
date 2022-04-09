@@ -5,7 +5,7 @@ import (
 	"jGui/sdl/ttf"
 )
 
-var DefaultFontFile = "NotoSansMono-Regular.ttf"
+var DefaultFontFile = "Source-Han-Sans-Regular.ttf"
 var fontCache map[int] (*ttf.Font)
 
 var (
@@ -15,6 +15,7 @@ var (
 	GREEN = Color{0, 255, 0, 0}
 	BLUE = Color{0, 0, 255, 0}
 )
+
 var (
 	DefaultTextColor = WHITE
 	DefaultBackgroundColor = BLACK
@@ -23,8 +24,8 @@ var (
 
 var (
 	DefaultActiveTextColor = WHITE
-	DefaultActiveBackgroundColor = RED
-	DefaultActiveBorderColor = WHITE
+	DefaultActiveBackgroundColor = BLACK
+	DefaultActiveBorderColor = RED
 )
 
 // type Color = sdl.Color
@@ -51,6 +52,15 @@ type Label struct {
 	sur *sdl.Surface
 
 	min_w, min_h int
+
+	BaseWidget
+}
+
+type Input struct {
+	sur *sdl.Surface
+
+	editText []rune
+	cursorPlace int
 
 	BaseWidget
 }
@@ -281,4 +291,168 @@ func (l *Label) Clear() {
 
 	l.sur.Close()
 	l.sur = nil
+}
+
+func NewInput(font_size int, colors ...Color) (*Input) {
+	var err error
+
+	font, ok := fontCache[font_size]
+	if !ok {
+		font, err = ttf.OpenFont(DefaultFontFile, font_size)
+		check(err)
+		fontCache[font_size] = font
+	}
+
+	ip := new(Input)
+	ip.Text = ""
+	ip.FontSize = font_size
+
+	ip.TextColor = DefaultTextColor
+	ip.BackgroundColor = DefaultBackgroundColor
+	ip.BorderColor = DefaultBorderColor
+
+	ip.ActiveTextColor = DefaultTextColor
+	ip.ActiveBorderColor = DefaultActiveBorderColor
+	ip.ActiveBackgroundColor = DefaultBackgroundColor
+
+	switch len(colors) {
+	case 6:
+		ip.ActiveBorderColor = colors[5]
+		fallthrough
+	case 5:
+		ip.ActiveBackgroundColor = colors[4]
+		fallthrough
+	case 4:
+		ip.ActiveTextColor = colors[3]
+		fallthrough
+	case 3:
+		ip.BorderColor = colors[2]
+		fallthrough
+	case 2:
+		ip.BackgroundColor = colors[1]
+		fallthrough
+	case 1:
+		ip.TextColor = colors[0]
+	}
+
+	ip.sur = nil
+	ip.id = ID_NULL
+
+	ip.BorderWidth = 2
+	ip.Padding = 2
+
+	ip.Align = ALIGN_LEFT
+
+	ip.SetWidth(0)
+	ip.SetHeight(0)
+
+	ip.EventList = make(map[WidgetEvent]func(WidgetEvent, Widget), 5)
+	
+	ip.EventList[WE_FOCUSIN] = func (we WidgetEvent, wg Widget) {
+		// input := wg.(*Input)
+		sdl.StartTextInput()
+	}
+
+	ip.EventList[WE_FOCUSOUT] = func (we WidgetEvent, wg Widget) {
+		// input := wg.(*Input)
+		sdl.StopTextInput()
+	}
+
+	ip.EventList[WE_TEXT_INPUT] = func (we WidgetEvent, wg Widget) {
+		input := wg.(*Input)
+		addText := []rune(input.Parent.Event.InputText())
+		input.editText = append(input.editText, addText...)
+		logger.Printf("Input add text : %s, now text is %s", addText, input.editText)
+		input.Clear()
+	}
+
+	ip.EventList[WE_KEY] = func (we WidgetEvent, wg Widget) {
+		input := wg.(*Input)
+		switch input.Parent.Event.Key() {
+		case sdl.KBACKSPACE:
+			l := len(input.editText) - 1
+			if (l >= 0) {
+				input.editText = input.editText[:l]
+			} else {
+				input.editText = input.editText[:0]
+			}
+			input.Clear()
+		}
+	}
+
+	return ip
+}
+
+func (ip *Input) Draw(sur *Screen, area * Rect) {
+	var err error
+
+	var (
+		textColor = ip.TextColor
+		backgroundColor = ip.BackgroundColor
+		borderColor = ip.BorderColor
+	)
+
+	if ip.actived {
+		borderColor = ip.ActiveBorderColor
+	}
+
+	ip.Text = string(ip.editText)
+
+	if ip.Text == "" {
+		sur.DrawBorder(area.ToSDL(), ip.BorderWidth, borderColor)
+		return
+	}
+
+
+	// Get Text Surface to fill
+	if (ip.sur == nil) {
+		ip.sur, err = fontCache[ip.FontSize].RenderText(ip.Text, textColor)
+		check(err)
+	}
+	mw, mh := ip.sur.Size()
+	// Check for best widget size	
+	area.SetW(MAX(area.W(), mw + ip.BorderWidth * 2 + ip.Padding * 2))
+	area.SetH(MAX(area.H(), mh + ip.BorderWidth * 2 + ip.Padding * 2))
+
+	{ // Clear Origin
+		sur.Fill(area.ToSDL(), backgroundColor.Map(sur))
+	}
+
+	{ // Draw Border
+		sur.DrawBorder(area.ToSDL(), ip.BorderWidth, borderColor)
+	}
+
+	{ // Draw Text
+		AlignSet(mw, mh, ip.BorderWidth, ip.Padding, area, ip.Align)
+
+		err = sur.Blit(ip.sur, area.ToSDL())
+		check(err)
+	}
+}
+
+func (ip *Input) Call(we WidgetEvent) {
+	switch we {
+	case WE_FOCUSIN:
+		ip.actived = true
+	case WE_FOCUSOUT:
+		ip.actived = false
+	}
+	if f, ok := ip.EventList[we]; ok {
+		f(we, ip)
+	}
+	ip.Parent.UpdateWidget(ip.Id())
+}
+
+func (ip *Input) Pack(w *Window, area * Rect) *Input {
+	ip.id = w.Register(ip, area)
+	logger.Printf("Regist id %d", ip.id)
+	ip.Parent = w
+	return ip
+}
+
+func (ip *Input) Clear() {
+	ip.BaseWidget.Clear()
+
+	ip.sur.Close()
+	ip.sur = nil
 }

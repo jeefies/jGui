@@ -8,7 +8,7 @@ Package url:
 package sdl
 
 /*
-#include<SDL2/SDL.h>
+#include <SDL2/SDL.h>
  */
 import "C"
 
@@ -38,4 +38,16 @@ func Init(flags uint32) error {
 // The interface of SDL_Quit
 func Quit() {
 	C.SDL_Quit()
+}
+
+func StartTextInput() {
+	C.SDL_StartTextInput()
+}
+
+func StopTextInput() {
+	C.SDL_StopTextInput()
+}
+
+func IsTextInputActive() bool {
+	return bool(C.SDL_IsTextInputActive() == C.SDL_TRUE)
 }
