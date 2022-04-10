@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"jGui/jgui"
+	"jGui/sdl"
 )
 
 func TestWindow1() *jgui.Window {
@@ -40,10 +41,19 @@ func TestWindow2() *jgui.Window {
 
 	area := jgui.NewRelRect(5, 5, 0.2, 0.2, jgui.REL_W | jgui.REL_H)
 
-	jgui.NewLabel("Rel", 15).Pack(win, area)
+	lb := jgui.NewLabel("Rel", 15).Pack(win, area)
 
 	ip := jgui.NewInput(14).Pack(win, jgui.NewRelRect(5, 0.3, 0.8, 35, jgui.REL_Y | jgui.REL_W))
 	ip.AutoFocus = true
+
+	ip.RegisterEvent(jgui.WE_KEY, func (we jgui.WidgetEvent, wg jgui.Widget) {
+		input := wg.(*jgui.Input)
+		switch input.Key() {
+		case sdl.KRETURN:
+			lb.Configure("text", input.Text)
+		}
+	})
+
 
 	return win
 }

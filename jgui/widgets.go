@@ -356,25 +356,6 @@ func NewInput(font_size int, colors ...Color) (*Input) {
 
 	ip.EventList = make(map[WidgetEvent]func(WidgetEvent, Widget), 5)
 
-	ip.EventList[WE_KEY] = func (we WidgetEvent, wg Widget) {
-		input := wg.(*Input)
-		switch input.Parent.Event.Key() {
-		case sdl.KBACKSPACE:
-			l := len(input.currentRune) - 1
-			if (l >= 0) {
-				input.currentRune = input.currentRune[:l]
-			} else {
-				input.currentRune = input.currentRune[:0]
-			}
-			input.Clear()
-			input.Parent.Update()
-		case sdl.KRETURN:
-			logger.Printf("Text Enter: %s", input.Text)
-		case sdl.KESC:
-			input.Parent.FocusOut()
-		}
-	}
-
 	return ip
 }
 
@@ -451,6 +432,13 @@ func (ip *Input) Call(we WidgetEvent) {
 	case WE_FOCUSIN:
 		ip.actived = true
 		sdl.StartTextInput()
+		area, _ := ip.Parent.GetWidgetArea(ip.id)
+		if false {
+			area = area.MapVH(ip.Parent.Size())
+			area.y += area.h
+			area.Pout()
+		}
+		sdl.SetTextInputRect(area.ToSDL())
 	case WE_FOCUSOUT:
 		ip.actived = false
 		sdl.StopTextInput()
@@ -459,26 +447,38 @@ func (ip *Input) Call(we WidgetEvent) {
 			ip.Parent.Focus(ip.id)
 		}
 	case WE_TEXT_INPUT:
-		input := wg.(*Input)
-		addText := []rune(input.Parent.Event.InputText())
-		input.currentRune = append(input.currentRune, addText...)
-		logger.Printf("Input add text : %s, now text is %s", string(addText), string(input.currentRune))
-		input.Clear()
+		addText := []rune(ip.Parent.Event.InputText())
+		ip.currentRune = append(ip.currentRune, addText...)
+		logger.Printf("Input add text : %s, now text is %s", string(addText), string(ip.currentRune))
+		ip.Clear()
 
-		if input.afterEdit {
-			logger.Printf("After input, redraw the window")
-			input.afterEdit = false
-			input.editingText = ""
-			input.Parent.Update()
+		if ip.afterEdit {
+			logger.Printf("After ip, redraw the window")
+			ip.afterEdit = false
+			ip.editingText = ""
+			ip.Parent.Update()
 		}
 	case WE_TEXT_EDITING:
-		input := wg.(*Input)
-		edi := input.Parent.Event.EditingText()
-		input.editingText = edi
+		edi := ip.Parent.Event.EditingText()
+		ip.editingText = edi
 
-		input.edisur.Close()
-		input.edisur = nil
-		input.afterEdit = true
+		ip.edisur.Close()
+		ip.edisur = nil
+		ip.afterEdit = true
+	case WE_KEY:
+		switch ip.Key() {
+		case sdl.KBACKSPACE:
+			l := len(ip.currentRune) - 1
+			if (l >= 0) {
+				ip.currentRune = ip.currentRune[:l]
+			} else {
+				ip.currentRune = ip.currentRune[:0]
+			}
+			ip.Clear()
+			ip.Parent.Update()
+		case sdl.KESC:
+			ip.Parent.FocusOut()	
+		}
 	}
 	if f, ok := ip.EventList[we]; ok {
 		f(we, ip)
@@ -505,4 +505,8 @@ func (ip *Input) Clear() {
 		ip.edisur.Close()
 		ip.edisur = nil
 	}
+}
+
+func (ip *Input) Key() uint32 {
+	return ip.Parent.Event.Key()
 }

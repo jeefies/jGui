@@ -51,3 +51,7 @@ func StopTextInput() {
 func IsTextInputActive() bool {
 	return bool(C.SDL_IsTextInputActive() == C.SDL_TRUE)
 }
+
+func SetTextInputRect(rect * Rect) {
+	C.SDL_SetTextInputRect(rect)
+}
