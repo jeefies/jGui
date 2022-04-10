@@ -136,6 +136,7 @@ func (win *Window) Register(wg Widget, area *Rect) ID {
 
 func (w *Window) Update() {
 	scr := w.GetOriginScreen()
+	scr.ClearWith(w.BackgroundColor)
 	for i, wg := range w.childs {
 		wg.Draw(scr, w.areas[i].MapVH(w.Width(), w.Height()))
 	}
@@ -203,4 +204,17 @@ func (w *Window) Move(id ID, area *Rect) {
 	wg.Clear()
 	w.areas[id] = area
 	wg.Draw(w.GetOriginScreen(), area.MapVH(w.Width(), w.Height()))
+}
+
+func (w *Window) Focus(id ID) {
+	if (w.focus_child != ID_NULL) {
+		w.SendEvent(w.focus_child, WE_FOCUSOUT)
+	}
+
+	w.focus_child = id
+	w.SendEvent(w.focus_child, WE_FOCUSIN)
+}
+
+func (w *Window) FocusOut() {
+	w.Focus(ID_NULL)
 }

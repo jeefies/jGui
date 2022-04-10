@@ -37,6 +37,10 @@ unsigned char getButton(SDL_Event * e) {
 char * getInputText(SDL_Event * e) {
 	return e->text.text;
 }
+
+char * getEditingText(SDL_Event * e) {
+	return e->edit.text;
+}
 */
 import "C"
 
@@ -86,11 +90,33 @@ const (
 	KRSHIFT             uint32 = uint32(C.SDLK_RSHIFT)
 	KLCTRL              uint32 = uint32(C.SDLK_LCTRL)
 	KRCTRL              uint32 = uint32(C.SDLK_RCTRL)
+	KRALT               uint32 = uint32(C.SDLK_RALT)
+	KLALT               uint32 = uint32(C.SDLK_LALT)
 
 	KTAB                uint32 = uint32(C.SDLK_TAB)
 	KESC                uint32 = uint32(C.SDLK_ESCAPE)
 	KBACKSPACE          uint32 = uint32(C.SDLK_BACKSPACE)
 	KDEL                uint32 = uint32(C.SDLK_DELETE)
+
+	KRETURN             uint32 = uint32(C.SDLK_RETURN)
+	KF1                 uint32 = uint32(C.SDLK_F1)
+	KPAUSE              uint32 = uint32(C.SDLK_PAUSE)
+	KINSERT             uint32 = uint32(C.SDLK_INSERT)
+	KHOME               uint32 = uint32(C.SDLK_HOME)
+	KEND                uint32 = uint32(C.SDLK_END)
+	KPAGEUP             uint32 = uint32(C.SDLK_PAGEUP)
+	KPAGEDOWN           uint32 = uint32(C.SDLK_PAGEDOWN)
+	KF2                 uint32 = uint32(C.SDLK_F2)
+	KF3                 uint32 = uint32(C.SDLK_F3)
+	KF4                 uint32 = uint32(C.SDLK_F4)
+	KF5                 uint32 = uint32(C.SDLK_F5)
+	KF6                 uint32 = uint32(C.SDLK_F6)
+	KF7                 uint32 = uint32(C.SDLK_F7)
+	KF8                 uint32 = uint32(C.SDLK_F8)
+	KF9                 uint32 = uint32(C.SDLK_F9)
+	KF10                uint32 = uint32(C.SDLK_F10)
+	KF11                uint32 = uint32(C.SDLK_F11)
+	KF12                uint32 = uint32(C.SDLK_F12)
 )
 
 var mx, my int
@@ -168,4 +194,8 @@ func GetRootMousePosition() (int,  int) {
 
 func (e *Event) InputText() string {
 	return C.GoString(C.getInputText(e))
+}
+
+func (e *Event) EditingText() string {
+	return C.GoString(C.getEditingText(e))
 }

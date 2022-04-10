@@ -37,6 +37,7 @@ func Mainloop() {
 	for _, win := range wins {
 		win.Update()
 		win.Event = e
+		win.SendEventALL(WE_INIT)
 		logger.Printf("win %d at %p", win.id, win)
 	}
 
@@ -55,6 +56,8 @@ func Mainloop() {
 			goto MainEnd
 		case sdl.MOUSE_MOTION:
 			win := GetWindowById(e.WinId())
+			if win == nil { break }
+
 			var move_out bool = true
 
 			mx, my := e.MousePosition()
@@ -91,14 +94,16 @@ func Mainloop() {
 			win.Show()
 		case sdl.WINDOWS_EVENT:
 			win := GetWindowById(e.WinId())
+			if win == nil { break }
+
 			switch e.WinEvent() {
 			case sdl.WINDOW_CLOSE:
 				win.Close()
 			case sdl.WINDOW_RESIZED:
 				fallthrough
 			case sdl.WINDOW_SIZE_CHANGED:
-				win.Clear()
 				win.SendEventALL(WE_RESIZE)
+				win.Update()
 			}
 
 		case sdl.MOUSE_DOWN:
@@ -117,6 +122,8 @@ func Mainloop() {
 			}
 			
 			win := GetWindowById(e.WinId())
+			if win == nil { break }
+
 			ct := eTime.Up()
 
 			var CLICK, DCLICK WidgetEvent
@@ -162,6 +169,8 @@ func Mainloop() {
 			}
 		case sdl.TEXT_INPUT:
 			win := GetWindowById(e.WinId())
+			if win == nil { break }
+
 			win.SendEvent(win.focus_child, WE_TEXT_INPUT)
 		} // swicth match
 

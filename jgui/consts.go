@@ -32,6 +32,7 @@ const (
 
 type WidgetEvent = uint16
 const (
+	WE_INIT WidgetEvent = ^uint16(0)
 	WE_IN WidgetEvent = iota
 	WE_OUT
 	WE_RESIZE

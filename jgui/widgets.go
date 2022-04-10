@@ -14,6 +14,10 @@ var (
 	RED = Color{255, 0, 0, 0}
 	GREEN = Color{0, 255, 0, 0}
 	BLUE = Color{0, 0, 255, 0}
+	GREY = Color{128, 128, 128, 0}
+	DARKGREY = Color{169, 169, 169, 0}
+	LIGHTGREY = Color{211, 211, 211, 0}
+	SILVER = Color{192, 192, 192, 0}
 )
 
 var (
@@ -45,6 +49,7 @@ type BaseWidget struct {
 	id ID
 	Parent *Window
 
+	AutoFocus bool
 	EventList map[WidgetEvent]func(we WidgetEvent, wg Widget)
 }
 
@@ -58,8 +63,11 @@ type Label struct {
 
 type Input struct {
 	sur *sdl.Surface
+	edisur *sdl.Surface
 
-	editText []rune
+	currentRune []rune
+	editingText string
+	afterEdit bool
 	cursorPlace int
 
 	BaseWidget
@@ -347,36 +355,23 @@ func NewInput(font_size int, colors ...Color) (*Input) {
 	ip.SetHeight(0)
 
 	ip.EventList = make(map[WidgetEvent]func(WidgetEvent, Widget), 5)
-	
-	ip.EventList[WE_FOCUSIN] = func (we WidgetEvent, wg Widget) {
-		// input := wg.(*Input)
-		sdl.StartTextInput()
-	}
-
-	ip.EventList[WE_FOCUSOUT] = func (we WidgetEvent, wg Widget) {
-		// input := wg.(*Input)
-		sdl.StopTextInput()
-	}
-
-	ip.EventList[WE_TEXT_INPUT] = func (we WidgetEvent, wg Widget) {
-		input := wg.(*Input)
-		addText := []rune(input.Parent.Event.InputText())
-		input.editText = append(input.editText, addText...)
-		logger.Printf("Input add text : %s, now text is %s", addText, input.editText)
-		input.Clear()
-	}
 
 	ip.EventList[WE_KEY] = func (we WidgetEvent, wg Widget) {
 		input := wg.(*Input)
 		switch input.Parent.Event.Key() {
 		case sdl.KBACKSPACE:
-			l := len(input.editText) - 1
+			l := len(input.currentRune) - 1
 			if (l >= 0) {
-				input.editText = input.editText[:l]
+				input.currentRune = input.currentRune[:l]
 			} else {
-				input.editText = input.editText[:0]
+				input.currentRune = input.currentRune[:0]
 			}
 			input.Clear()
+			input.Parent.Update()
+		case sdl.KRETURN:
+			logger.Printf("Text Enter: %s", input.Text)
+		case sdl.KESC:
+			input.Parent.FocusOut()
 		}
 	}
 
@@ -385,6 +380,8 @@ func NewInput(font_size int, colors ...Color) (*Input) {
 
 func (ip *Input) Draw(sur *Screen, area * Rect) {
 	var err error
+	var editing = true
+	var content = true
 
 	var (
 		textColor = ip.TextColor
@@ -396,23 +393,33 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 		borderColor = ip.ActiveBorderColor
 	}
 
-	ip.Text = string(ip.editText)
+	ip.Text = string(ip.currentRune)
 
-	if ip.Text == "" {
-		sur.DrawBorder(area.ToSDL(), ip.BorderWidth, borderColor)
-		return
-	}
-
+	if ip.Text == "" { content = false }
+	if ip.editingText == "" { editing = false }
 
 	// Get Text Surface to fill
-	if (ip.sur == nil) {
+	if content && ip.sur == nil {
 		ip.sur, err = fontCache[ip.FontSize].RenderText(ip.Text, textColor)
 		check(err)
 	}
-	mw, mh := ip.sur.Size()
+
+	if editing && ip.edisur == nil {
+		ip.edisur, err = fontCache[ip.FontSize].RenderText(ip.editingText, SILVER)
+		check(err)
+	}
+
+	var ew, eh, mw, mh int
+	if content {
+		mw, mh = ip.sur.Size()
+	}
+	if editing {
+		ew, eh = ip.edisur.Size()
+	}
+
 	// Check for best widget size	
-	area.SetW(MAX(area.W(), mw + ip.BorderWidth * 2 + ip.Padding * 2))
-	area.SetH(MAX(area.H(), mh + ip.BorderWidth * 2 + ip.Padding * 2))
+	area.SetW(MAX(area.W(), mw + ew + ip.BorderWidth * 2 + ip.Padding * 2))
+	area.SetH(MAX(area.H(), mh + eh + ip.BorderWidth * 2 + ip.Padding * 2))
 
 	{ // Clear Origin
 		sur.Fill(area.ToSDL(), backgroundColor.Map(sur))
@@ -425,8 +432,17 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 	{ // Draw Text
 		AlignSet(mw, mh, ip.BorderWidth, ip.Padding, area, ip.Align)
 
-		err = sur.Blit(ip.sur, area.ToSDL())
-		check(err)
+		if content {
+			err = sur.Blit(ip.sur, area.ToSDL())
+			check(err)
+		}
+
+		if editing {
+			// Draw editing text
+			area.SetX(area.X() + mw)
+			err = sur.Blit(ip.edisur, area.ToSDL())
+			check(err)
+		}
 	}
 }
 
@@ -434,8 +450,35 @@ func (ip *Input) Call(we WidgetEvent) {
 	switch we {
 	case WE_FOCUSIN:
 		ip.actived = true
+		sdl.StartTextInput()
 	case WE_FOCUSOUT:
 		ip.actived = false
+		sdl.StopTextInput()
+	case WE_INIT:
+		if ip.AutoFocus {
+			ip.Parent.Focus(ip.id)
+		}
+	case WE_TEXT_INPUT:
+		input := wg.(*Input)
+		addText := []rune(input.Parent.Event.InputText())
+		input.currentRune = append(input.currentRune, addText...)
+		logger.Printf("Input add text : %s, now text is %s", string(addText), string(input.currentRune))
+		input.Clear()
+
+		if input.afterEdit {
+			logger.Printf("After input, redraw the window")
+			input.afterEdit = false
+			input.editingText = ""
+			input.Parent.Update()
+		}
+	case WE_TEXT_EDITING:
+		input := wg.(*Input)
+		edi := input.Parent.Event.EditingText()
+		input.editingText = edi
+
+		input.edisur.Close()
+		input.edisur = nil
+		input.afterEdit = true
 	}
 	if f, ok := ip.EventList[we]; ok {
 		f(we, ip)
@@ -453,6 +496,13 @@ func (ip *Input) Pack(w *Window, area * Rect) *Input {
 func (ip *Input) Clear() {
 	ip.BaseWidget.Clear()
 
-	ip.sur.Close()
-	ip.sur = nil
+	if ip.sur != nil {
+		ip.sur.Close()
+		ip.sur = nil
+	}
+
+	if ip.edisur != nil {
+		ip.edisur.Close()
+		ip.edisur = nil
+	}
 }

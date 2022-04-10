@@ -42,7 +42,8 @@ func TestWindow2() *jgui.Window {
 
 	jgui.NewLabel("Rel", 15).Pack(win, area)
 
-	jgui.NewInput(14).Pack(win, jgui.NewRelRect(5, 0.3, 0.8, 35, jgui.REL_Y | jgui.REL_W))
+	ip := jgui.NewInput(14).Pack(win, jgui.NewRelRect(5, 0.3, 0.8, 35, jgui.REL_Y | jgui.REL_W))
+	ip.AutoFocus = true
 
 	return win
 }

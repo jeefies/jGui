@@ -1,3 +1,6 @@
+/*
+This module should not be used any more, there's some better solution by Time.NewTicker
+*/
 package sdl
 
 import (
