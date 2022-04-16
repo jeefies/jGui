@@ -1,3 +1,20 @@
+/*
+Package jGui/jgui implements a higher level api for SDL framework
+
+Author: Jeefy
+Email: jeefy163@163.com (in China) or jeefyol@outlook.com (Not much used)
+
+There's no direct use of sdl by `C` module but import jGui/sdl, which defines simple apis for sdl.
+In this module, main structures are:
+	Window: The pointer to a window's instance to control the events of it
+	BaseWidget: Defines basic properties and simplest methods of a widget (Can not be directly used)
+	Rect: Can also be called Area, which mainly represents an area or a relative area
+and interfaces are:
+	Widget
+type alias:
+	WidgetEvent: It's an alias of `uint16` which is the type of widget events
+	ID: It's an alias of `uint32` which is the type of ALL ID field (ID_NULL is ^uint32(0))
+*/
 package jgui
 
 import (
@@ -5,8 +22,6 @@ import (
 
 	"jGui/sdl"
 )
-
-var FPS time.Duration = 30
 
 func MAX (x, y int) int {
 	if (x > y) {
@@ -41,23 +56,24 @@ func Mainloop() {
 		logger.Printf("win %d at %p", win.id, win)
 	}
 
-	timer := time.NewTicker(time.Second / FPS)
-
 	var eTime MouseClickEvent
+	var kPress = NewKeyPressEvent()
 
 	for {
-		if !e.Poll() {
-			time.Sleep(1e5) // 1e9 is a second, that mean sleep 1/1000s
-			goto SELECT_UPDATE
+		for !e.Poll() {
+			time.Sleep(5e6) // 1e9 is a second, that mean sleep 1/20s
+		}
+
+		win := GetWindowById(e.WinId())
+		if win == nil {
+			if e.Type() == QUIT {
+				goto MainEnd
+			}
+			continue
 		}
 
 		switch e.Type() {
-		case sdl.QUIT:
-			goto MainEnd
-		case sdl.MOUSE_MOTION:
-			win := GetWindowById(e.WinId())
-			if win == nil { break }
-
+		case MOUSE_MOTION:
 			var move_out bool = true
 
 			mx, my := e.MousePosition()
@@ -92,10 +108,7 @@ func Mainloop() {
 
 			MOTION_CLEAR_UP: 
 			win.Show()
-		case sdl.WINDOWS_EVENT:
-			win := GetWindowById(e.WinId())
-			if win == nil { break }
-
+		case WINDOWS_EVENT:
 			switch e.WinEvent() {
 			case sdl.WINDOW_CLOSE:
 				win.Close()
@@ -106,13 +119,12 @@ func Mainloop() {
 				win.Update()
 			}
 
-		case sdl.MOUSE_DOWN:
-			// win := GetWindowById(e.WinId())
+		case MOUSE_DOWN:
 			eTime.Down()
 			eTime.lastWinId = e.WinId()
 			eTime.lastButton = e.GetButton()
 
-		case sdl.MOUSE_UP:
+		case MOUSE_UP:
 			if eTime.lastWinId != e.WinId() {
 				break
 			}
@@ -121,68 +133,38 @@ func Mainloop() {
 				break
 			}
 			
-			win := GetWindowById(e.WinId())
-			if win == nil { break }
-
 			ct := eTime.Up()
 
-			var CLICK, DCLICK WidgetEvent
-			switch e.GetButton() {
-			case sdl.BUTTON_LEFT:
-				CLICK = WE_CLICKL
-				DCLICK = WE_CLICK_DOUBLEL
-			case sdl.BUTTON_MIDDLE:
-				CLICK = WE_CLICKM
-				DCLICK = WE_CLICK_DOUBLEM
-			case sdl.BUTTON_RIGHT:
-				CLICK = WE_CLICKR
-				DCLICK = WE_CLICK_DOUBLER
-			}
-
 			if ct != 0 { // Click
-				win.SendEvent(win.current_child, CLICK)
+				win.SendEvent(win.current_child, WE_CLICK)
 
 				if win.focus_child != win.current_child {
 					win.SendEvent(win.focus_child, WE_FOCUSOUT)
 					win.focus_child = win.current_child
 					win.SendEvent(win.current_child, WE_FOCUSIN)
 				} else if ct > 0 {
-					win.SendEvent(win.current_child, DCLICK)
+					win.SendEvent(win.current_child, WE_CLICK_DOUBLE)
 				}
 			}
 
-		case sdl.KEYUP:
-			win := GetWindowById(e.WinId())
-			if win == nil { break }
-
+		case KEYDOWN:
+			kPress.Down(e.WinId(), e.Key())
+		case KEYUP:
+			kPress.Up(e.WinId(), e.Key())
 			if win.focus_child != ID_NULL {
 				win.SendEvent(win.focus_child, WE_KEY)
 			} else {
 				win.SendEvent(win.current_child, WE_KEY)
 			}
-		case sdl.TEXT_EDITING:
-			win := GetWindowById(e.WinId())
-			if win == nil { break }
-
+		case TEXT_EDITING:
 			if (win.focus_child != ID_NULL) {
 				win.SendEvent(win.focus_child, WE_TEXT_EDITING)
 			}
-		case sdl.TEXT_INPUT:
-			win := GetWindowById(e.WinId())
-			if win == nil { break }
-
+		case TEXT_INPUT:
 			win.SendEvent(win.focus_child, WE_TEXT_INPUT)
 		} // swicth match
+		win.Show()
 
-		SELECT_UPDATE:
-		// Refresh windows
-		select {
-		case <-timer.C:
-			for _, cw := range wins {
-				cw.Show()
-			}
-		default:
-		}
 	} // For loop
 
 	MainEnd:

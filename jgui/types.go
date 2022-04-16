@@ -2,6 +2,7 @@ package jgui
 
 import (
 	"time"
+	"sync"
 
     "jGui/sdl"
 )
@@ -25,7 +26,7 @@ type Widget interface {
 	// Replace(x, y int)
 	Call(e WidgetEvent)
 	Draw(sur *Screen, area * Rect)
-	Clear()
+	CleanUp()
 	Update()
 
 	Width() int
@@ -45,6 +46,11 @@ type MouseClickEvent struct {
 	lastButton uint8
 }
 
+type KeyPressEvent struct {
+	keys map[uint32] bool
+	sync.Mutex
+}
+
 type Window struct {
 	win * sdl.Window
 	ren * sdl.Renderer
@@ -61,6 +67,7 @@ type Window struct {
 	areas [](*Rect)
 
 	Event * sdl.Event
+	sync.Mutex
 }
 
 
@@ -139,6 +146,7 @@ func (p Point) IsIn(r *Rect) bool {
 }
 
 func (me *MouseClickEvent) Down() int {
+	me.rootX, me.rootY = sdl.GetRootMousePosition()
 	n := time.Now()
 	ln := me.lastUp
 	me.lastDown = n
@@ -157,6 +165,7 @@ func (me *MouseClickEvent) Down() int {
 }
 
 func (me *MouseClickEvent) Up() int {
+	me.rootX, me.rootY = sdl.GetRootMousePosition()
 	n := time.Now()
 	ld := me.lastDown
 
@@ -176,4 +185,36 @@ func (me *MouseClickEvent) Up() int {
 
 	me.count = 0
 	return 0
+}
+
+func NewKeyPressEvent() *KeyPressEvent {
+	kp := new(KeyPressEvent)
+	kp.keys = make(map[uint32] bool, 30)
+	return kp
+}
+
+func (kp *KeyPressEvent) Down(wID ID, key uint32) {
+	kp.Lock()
+	kp.keys[key] = true
+	kp.Unlock()
+	go func(win *Window) {
+		time.Sleep(4e8)
+		for {
+			kp.Lock()
+			if !kp.keys[key] {
+				kp.Unlock()
+				break
+			}
+			kp.Unlock()
+			win.SendEvent(win.focus_child, WE_KEY)
+			time.Sleep(1e8)
+		}
+		logger.Printf("Key %c Up", uint8(key))
+	}(GetWindowById(wID))
+}
+
+func (kp *KeyPressEvent) Up(wID ID, key uint32) {
+	kp.Lock()
+	kp.keys[key] = false
+	kp.Unlock()
 }

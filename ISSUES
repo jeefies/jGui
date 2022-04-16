@@ -1,0 +1,3 @@
+FIX:
+	Data Race error when running main, line 81
+	The data is win.Mutex (the field of the mutex lock to protect the drawing window)

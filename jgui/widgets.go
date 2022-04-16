@@ -1,12 +1,10 @@
 package jgui
 
 import (
-	"jGui/sdl"
-	"jGui/sdl/ttf"
-)
+	"sync"
 
-var DefaultFontFile = "Source-Han-Sans-Regular.ttf"
-var fontCache map[int] (*ttf.Font)
+	"jGui/sdl"
+)
 
 var (
 	WHITE = Color{255, 255, 255, 0}
@@ -37,6 +35,7 @@ var (
 type BaseWidget struct {
 	Text string
 	FontSize int
+	Font *Font
 	Align int
 	w, h int
 	BorderWidth int
@@ -48,9 +47,12 @@ type BaseWidget struct {
 
 	id ID
 	Parent *Window
+	ActualArea *Rect
 
 	AutoFocus bool
 	EventList map[WidgetEvent]func(we WidgetEvent, wg Widget)
+
+	sync.Mutex
 }
 
 type Label struct {
@@ -74,7 +76,6 @@ type Input struct {
 }
 
 func init() {
-	fontCache = make(map[int] (*ttf.Font))
 }
 
 func AlignSet(w, h int, bdw, pdw int, area *Rect, alignFlags int) {
@@ -95,20 +96,69 @@ func AlignSet(w, h int, bdw, pdw int, area *Rect, alignFlags int) {
 	}
 }
 
+func InitBaseWidget(bw *BaseWidget, text string, font_size int, colors ...Color) {
+	bw.Text = text
+	bw.FontSize = font_size
+
+	bw.TextColor = DefaultTextColor
+	bw.BackgroundColor = DefaultBackgroundColor
+	bw.BorderColor = DefaultBorderColor
+
+	bw.ActiveTextColor = DefaultTextColor
+	bw.ActiveBorderColor = DefaultActiveBorderColor
+	bw.ActiveBackgroundColor = DefaultBackgroundColor
+
+	switch len(colors) {
+	case 6:
+		bw.ActiveBorderColor = colors[5]
+		fallthrough
+	case 5:
+		bw.ActiveBackgroundColor = colors[4]
+		fallthrough
+	case 4:
+		bw.ActiveTextColor = colors[3]
+		fallthrough
+	case 3:
+		bw.BorderColor = colors[2]
+		fallthrough
+	case 2:
+		bw.BackgroundColor = colors[1]
+		fallthrough
+	case 1:
+		bw.TextColor = colors[0]
+	}
+
+	bw.id = ID_NULL
+
+	bw.BorderWidth = 2
+	bw.Padding = 2
+
+	bw.Align = ALIGN_LEFT
+	bw.Font = defaultFont
+
+	bw.EventList = make(map[WidgetEvent]func(WidgetEvent, Widget), 5)
+}
+
 func (bw *BaseWidget) Size() (w, h int) {
 	w, h = bw.w, bw.h
 	return
 }
 
 func (bw *BaseWidget) Update() {
-	bw.Clear()
+	bw.CleanUp()
 	bw.Parent.UpdateWidget(bw.id)
 }
 
-func (bw *BaseWidget) Clear() {
+func (bw *BaseWidget) CleanUp() {
+	bw.Lock()
+	defer bw.Unlock()
+
 	pt := bw.Parent
-	area, _ := pt.GetWidgetArea(bw.Id())
-	pt.GetOriginScreen().Fill(area.ToSDL(), pt.BackgroundColor.Map(pt.GetScreen()))
+
+	pt.Lock()
+	defer pt.Unlock()
+
+	pt.GetOriginScreen().Fill(bw.ActualArea.ToSDL(), pt.BackgroundColor.Map(pt.GetScreen()))
 }
 
 func (bw *BaseWidget) Width() int {
@@ -133,68 +183,30 @@ func (bw *BaseWidget) RegisterEvent(we WidgetEvent, f func(we WidgetEvent, wg Wi
 	bw.EventList[we] = f
 }
 
+func (bw *BaseWidget) OnEdit() {
+	bw.Lock()
+}
+
+func (bw *BaseWidget) EndEdit() {
+	bw.Unlock()
+}
+
 func (bw BaseWidget) Id() ID {
 	return bw.id
 }
 
 func NewLabel(text string, font_size int, colors ...Color) (*Label) {
-	var err error
-
-	font, ok := fontCache[font_size]
-	if !ok {
-		font, err = ttf.OpenFont(DefaultFontFile, font_size)
-		check(err)
-		fontCache[font_size] = font
-	}
-
 	lb := new(Label)
-	lb.Text = text
-	lb.FontSize = font_size
-	w, h, err := font.GuessSize(text)
-	check(err)
-	lb.min_w = w 
-	lb.min_h = h
-
-	lb.TextColor = DefaultTextColor
-	lb.BackgroundColor = DefaultBackgroundColor
-	lb.BorderColor = DefaultBorderColor
-
-	lb.ActiveTextColor = DefaultTextColor
-	lb.ActiveBorderColor = DefaultBorderColor
-	lb.ActiveBackgroundColor = DefaultBackgroundColor
-
-	switch len(colors) {
-	case 6:
-		lb.ActiveBorderColor = colors[5]
-		fallthrough
-	case 5:
-		lb.ActiveBackgroundColor = colors[4]
-		fallthrough
-	case 4:
-		lb.ActiveTextColor = colors[3]
-		fallthrough
-	case 3:
-		lb.BorderColor = colors[2]
-		fallthrough
-	case 2:
-		lb.BackgroundColor = colors[1]
-		fallthrough
-	case 1:
-		lb.TextColor = colors[0]
-	}
+	InitBaseWidget(&lb.BaseWidget, text, font_size, colors...)
 
 	lb.sur = nil
-	lb.id = ID_NULL
-
-	lb.BorderWidth = 2
-	lb.Padding = 2
-
-	lb.Align = ALIGN_CENTER
+	w, h := lb.Font.GuessSize(font_size, text)
+	lb.min_w = w 
+	lb.min_h = h
 
 	lb.SetWidth(0)
 	lb.SetHeight(0)
 
-	lb.EventList = make(map[WidgetEvent]func(WidgetEvent, Widget), 5)
 
 	return lb
 }
@@ -211,6 +223,8 @@ func (lb *Label) SetHeight(h int) int {
 
 func (l *Label) Draw(sur *Screen, area * Rect) {
 	var err error
+	l.Lock()
+	defer l.Unlock()
 
 	// Check for label color
 	// Label does not have active state
@@ -220,17 +234,23 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 		borderColor = l.BorderColor
 	)
 
+	if l.ActualArea != nil { // Clear Origin
+		sur.Fill(l.ActualArea.ToSDL(), l.Parent.BackgroundColor.Map(sur))
+	}
+
+
 	// Get Text Surface to fill
 	if (l.sur == nil) {
-		l.sur, err = fontCache[l.FontSize].RenderText(l.Text, textColor)
-		check(err)
+		l.sur = l.Font.Render(l.FontSize, l.Text, textColor)
 	}
 	mw, mh := l.sur.Size()
 	// Check for best widget size	
 	area.SetW(MAX(area.W(), mw + l.BorderWidth * 2 + l.Padding * 2))
 	area.SetH(MAX(area.H(), mh + l.BorderWidth * 2 + l.Padding * 2))
 
-	{ // Clear Origin
+	l.ActualArea = area.Copy()
+
+	{ // Draw Background
 		sur.Fill(area.ToSDL(), backgroundColor.Map(sur))
 	}
 
@@ -249,6 +269,7 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 func (l *Label) Call(e WidgetEvent) {
 	if f, ok := l.EventList[e]; ok {
 		f(e, l)
+		l.CleanUp()
 		l.Parent.UpdateWidget(l.Id())
 	}
 }
@@ -260,106 +281,26 @@ func (l *Label) Pack(w *Window, area * Rect) *Label {
 	return l
 }
 
-func (l *Label) Configure(method string, value interface{}) *Label {
-	switch method {
-	case "align":
-		if val, ok := value.(int); ok {
-			l.Align = val
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "text":
-		if val, ok := value.(string); ok {
-			l.Text = val
-			w, h, err := fontCache[l.FontSize].GuessSize(l.Text)
-			check(err)
-			l.min_w = w
-			l.min_h = h
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	case "font size":
-		if val, ok := value.(int); ok {
-			l.FontSize = val
+func (l *Label) CleanUp() {
+	l.BaseWidget.CleanUp()
 
-			_, ok := fontCache[val]
-			if !ok {
-				font, err := ttf.OpenFont(DefaultFontFile, val)
-				check(err)
-				fontCache[val] = font
-			}
-		} else { panic(sdl.NewSDLError("Not Valid config value")) }
-	}
-
-	if l.id != ID_NULL { 
-		l.Clear()
-		l.Parent.UpdateWidget(l.id)
-	}
-	return l
-}
-
-func (l *Label) Clear() {
-	l.BaseWidget.Clear()
-
+	l.Lock()
+	defer l.Unlock()
 	l.sur.Close()
 	l.sur = nil
 }
 
 func NewInput(font_size int, colors ...Color) (*Input) {
-	var err error
-
-	font, ok := fontCache[font_size]
-	if !ok {
-		font, err = ttf.OpenFont(DefaultFontFile, font_size)
-		check(err)
-		fontCache[font_size] = font
-	}
-
 	ip := new(Input)
-	ip.Text = ""
-	ip.FontSize = font_size
-
-	ip.TextColor = DefaultTextColor
-	ip.BackgroundColor = DefaultBackgroundColor
-	ip.BorderColor = DefaultBorderColor
-
-	ip.ActiveTextColor = DefaultTextColor
-	ip.ActiveBorderColor = DefaultActiveBorderColor
-	ip.ActiveBackgroundColor = DefaultBackgroundColor
-
-	switch len(colors) {
-	case 6:
-		ip.ActiveBorderColor = colors[5]
-		fallthrough
-	case 5:
-		ip.ActiveBackgroundColor = colors[4]
-		fallthrough
-	case 4:
-		ip.ActiveTextColor = colors[3]
-		fallthrough
-	case 3:
-		ip.BorderColor = colors[2]
-		fallthrough
-	case 2:
-		ip.BackgroundColor = colors[1]
-		fallthrough
-	case 1:
-		ip.TextColor = colors[0]
-	}
-
+	InitBaseWidget(&ip.BaseWidget, "", font_size, colors...)
 	ip.sur = nil
-	ip.id = ID_NULL
-
-	ip.BorderWidth = 2
-	ip.Padding = 2
-
-	ip.Align = ALIGN_LEFT
-
-	ip.SetWidth(0)
-	ip.SetHeight(0)
-
-	ip.EventList = make(map[WidgetEvent]func(WidgetEvent, Widget), 5)
-
 	return ip
 }
 
 func (ip *Input) Draw(sur *Screen, area * Rect) {
+	ip.Lock()
+	defer ip.Unlock()
+
 	var err error
 	var editing = true
 	var content = true
@@ -369,6 +310,11 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 		backgroundColor = ip.BackgroundColor
 		borderColor = ip.BorderColor
 	)
+
+	if ip.ActualArea != nil { // Clear Origin
+		sur.Fill(ip.ActualArea.ToSDL(), backgroundColor.Map(sur))
+	}
+
 
 	if ip.actived {
 		borderColor = ip.ActiveBorderColor
@@ -381,13 +327,11 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 
 	// Get Text Surface to fill
 	if content && ip.sur == nil {
-		ip.sur, err = fontCache[ip.FontSize].RenderText(ip.Text, textColor)
-		check(err)
+		ip.sur = ip.Font.Render(ip.FontSize, ip.Text, textColor)
 	}
 
 	if editing && ip.edisur == nil {
-		ip.edisur, err = fontCache[ip.FontSize].RenderText(ip.editingText, SILVER)
-		check(err)
+		ip.edisur = ip.Font.Render(ip.FontSize, ip.editingText, SILVER)
 	}
 
 	var ew, eh, mw, mh int
@@ -401,8 +345,9 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 	// Check for best widget size	
 	area.SetW(MAX(area.W(), mw + ew + ip.BorderWidth * 2 + ip.Padding * 2))
 	area.SetH(MAX(area.H(), mh + eh + ip.BorderWidth * 2 + ip.Padding * 2))
+	ip.ActualArea = area.Copy()
 
-	{ // Clear Origin
+	{ // Draw Background
 		sur.Fill(area.ToSDL(), backgroundColor.Map(sur))
 	}
 
@@ -450,14 +395,7 @@ func (ip *Input) Call(we WidgetEvent) {
 		addText := []rune(ip.Parent.Event.InputText())
 		ip.currentRune = append(ip.currentRune, addText...)
 		logger.Printf("Input add text : %s, now text is %s", string(addText), string(ip.currentRune))
-		ip.Clear()
 
-		if ip.afterEdit {
-			logger.Printf("After ip, redraw the window")
-			ip.afterEdit = false
-			ip.editingText = ""
-			ip.Parent.Update()
-		}
 	case WE_TEXT_EDITING:
 		edi := ip.Parent.Event.EditingText()
 		ip.editingText = edi
@@ -474,8 +412,6 @@ func (ip *Input) Call(we WidgetEvent) {
 			} else {
 				ip.currentRune = ip.currentRune[:0]
 			}
-			ip.Clear()
-			ip.Parent.Update()
 		case sdl.KESC:
 			ip.Parent.FocusOut()	
 		}
@@ -483,6 +419,7 @@ func (ip *Input) Call(we WidgetEvent) {
 	if f, ok := ip.EventList[we]; ok {
 		f(we, ip)
 	}
+	ip.CleanUp()
 	ip.Parent.UpdateWidget(ip.Id())
 }
 
@@ -493,9 +430,11 @@ func (ip *Input) Pack(w *Window, area * Rect) *Input {
 	return ip
 }
 
-func (ip *Input) Clear() {
-	ip.BaseWidget.Clear()
+func (ip *Input) CleanUp() {
+	ip.BaseWidget.CleanUp()
 
+	ip.Lock()
+	defer ip.Unlock()
 	if ip.sur != nil {
 		ip.sur.Close()
 		ip.sur = nil

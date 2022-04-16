@@ -1,6 +1,3 @@
-/*
- * Define window actions here
- */
 package jgui
 
 import (
@@ -44,6 +41,10 @@ func CreateWindow(title string, w, h int, flags ID) (jw *Window) {
 	return
 }
 
+func (w *Window) Id() ID {
+	return w.id
+}
+
 func (w *Window) GetOriginScreen() (*Screen) {
 	return w._scr
 }
@@ -65,6 +66,8 @@ func (w *Window) GetUpdateMode() uint8 {
 }
 
 func (w *Window) CopyToOrigin() {
+	w.Lock()
+	defer w.Unlock()
 	s := w.GetScreen()
 
 	ww, wh := w.win.GetSize()
@@ -91,21 +94,25 @@ func (w *Window) Show() {
 		w.CopyToOrigin()
 		w.win.UpdateSurface()
 	} else if (w.update_mode == WIN_UPDATE_RENDER) {
+		w.CopyToOrigin()
 		w.RenderScreen()
 		w.ren.Present()
 	}
 }
 
 func (w *Window) RenderScreen() {
+	w.Lock()
+	defer w.Unlock()
     var err error
 
-	w.CopyToOrigin()
     text, err := w.ren.CreateTextureFromSurface(w.GetScreen())
     check(err)
 
     w.ren.Clear()
     err = w.ren.FillTexture(text, nil)
     check(err)
+
+	text.Close()
 
 }
 
@@ -175,6 +182,7 @@ func (w *Window) SendEvent(id ID, we WidgetEvent) {
 		return
 	}
 	logger.Printf("Win %d Widget %d Call Event %d", w.id, id, we)
+
 	w.childs[id].Call(we)
 }
 
@@ -195,13 +203,13 @@ func GetWindowById(id ID) (w *Window) {
 	return
 }
 
-func (w *Window) Move(id ID, area *Rect) {
+func (w *Window) MoveWidgetTo(id ID, area *Rect) {
 	if int(id) >= len(w.childs) {
 		return
 	}
 
 	wg, _ := w.GetWidget(id)
-	wg.Clear()
+	wg.CleanUp()
 	w.areas[id] = area
 	wg.Draw(w.GetOriginScreen(), area.MapVH(w.Width(), w.Height()))
 }

@@ -121,3 +121,7 @@ func (sur * Surface) DrawBorder(area * Rect, width int, cl Color) {
 	var color C.Uint32 = C.Uint32(cl.MapA(sur))
 	C.j_border(sur, area, w, color)
 }
+
+func (text *Texture) Close() {
+	C.SDL_DestroyTexture(text)
+}
