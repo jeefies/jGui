@@ -48,6 +48,7 @@ type BaseWidget struct {
 	id ID
 	Parent *Window
 	ActualArea *Rect
+	TextSur *Screen
 
 	AutoFocus bool
 	EventList map[WidgetEvent]func(we WidgetEvent, wg Widget)
@@ -56,15 +57,12 @@ type BaseWidget struct {
 }
 
 type Label struct {
-	sur *sdl.Surface
-
 	min_w, min_h int
 
 	BaseWidget
 }
 
 type Input struct {
-	sur *sdl.Surface
 	edisur *sdl.Surface
 
 	currentRune []rune
@@ -153,10 +151,18 @@ func (bw *BaseWidget) CleanUp() {
 	bw.Lock()
 	defer bw.Unlock()
 
+	if bw.TextSur != nil {
+		bw.TextSur.Close()
+		bw.TextSur = nil
+	}
+
 	pt := bw.Parent
 
 	pt.Lock()
 	defer pt.Unlock()
+
+	// Once there's a segmentation fault because of the null pointer after window closed
+	if pt._scr == nil { return }
 
 	pt.GetOriginScreen().Fill(bw.ActualArea.ToSDL(), pt.BackgroundColor.Map(pt.GetScreen()))
 }
@@ -199,7 +205,6 @@ func NewLabel(text string, font_size int, colors ...Color) (*Label) {
 	lb := new(Label)
 	InitBaseWidget(&lb.BaseWidget, text, font_size, colors...)
 
-	lb.sur = nil
 	w, h := lb.Font.GuessSize(font_size, text)
 	lb.min_w = w 
 	lb.min_h = h
@@ -238,12 +243,18 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 		sur.Fill(l.ActualArea.ToSDL(), l.Parent.BackgroundColor.Map(sur))
 	}
 
+	var content = true
+	if l.Text == "" { content = false }
 
 	// Get Text Surface to fill
-	if (l.sur == nil) {
-		l.sur = l.Font.Render(l.FontSize, l.Text, textColor)
+	if (content && l.TextSur == nil) {
+		logger.Printf("Render Text %s", l.Text)
+		l.TextSur = l.Font.Render(l.FontSize, l.Text, textColor)
 	}
-	mw, mh := l.sur.Size()
+	var mw, mh int
+	if content {
+		mw, mh = l.TextSur.Size()
+	}
 	// Check for best widget size	
 	area.SetW(MAX(area.W(), mw + l.BorderWidth * 2 + l.Padding * 2))
 	area.SetH(MAX(area.H(), mh + l.BorderWidth * 2 + l.Padding * 2))
@@ -255,13 +266,13 @@ func (l *Label) Draw(sur *Screen, area * Rect) {
 	}
 
 	{ // Draw Border
-		sur.DrawBorder(area.ToSDL(), l.BorderWidth, borderColor)
+		DrawBorder(sur, area.ToSDL(), l.BorderWidth, borderColor)
 	}
 
-	{ // Draw Text
+	if content { // Draw Text
 		AlignSet(mw, mh, l.BorderWidth, l.Padding, area, l.Align)
 
-		err = sur.Blit(l.sur, area.ToSDL())
+		err = sur.Blit(l.TextSur, area.ToSDL())
 		check(err)
 	}
 }
@@ -281,19 +292,10 @@ func (l *Label) Pack(w *Window, area * Rect) *Label {
 	return l
 }
 
-func (l *Label) CleanUp() {
-	l.BaseWidget.CleanUp()
-
-	l.Lock()
-	defer l.Unlock()
-	l.sur.Close()
-	l.sur = nil
-}
-
 func NewInput(font_size int, colors ...Color) (*Input) {
 	ip := new(Input)
 	InitBaseWidget(&ip.BaseWidget, "", font_size, colors...)
-	ip.sur = nil
+	ip.edisur = nil
 	return ip
 }
 
@@ -326,8 +328,8 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 	if ip.editingText == "" { editing = false }
 
 	// Get Text Surface to fill
-	if content && ip.sur == nil {
-		ip.sur = ip.Font.Render(ip.FontSize, ip.Text, textColor)
+	if content && ip.TextSur == nil {
+		ip.TextSur = ip.Font.Render(ip.FontSize, ip.Text, textColor)
 	}
 
 	if editing && ip.edisur == nil {
@@ -336,7 +338,7 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 
 	var ew, eh, mw, mh int
 	if content {
-		mw, mh = ip.sur.Size()
+		mw, mh = ip.TextSur.Size()
 	}
 	if editing {
 		ew, eh = ip.edisur.Size()
@@ -352,14 +354,14 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 	}
 
 	{ // Draw Border
-		sur.DrawBorder(area.ToSDL(), ip.BorderWidth, borderColor)
+		DrawBorder(sur, area.ToSDL(), ip.BorderWidth, borderColor)
 	}
 
 	{ // Draw Text
 		AlignSet(mw, mh, ip.BorderWidth, ip.Padding, area, ip.Align)
 
 		if content {
-			err = sur.Blit(ip.sur, area.ToSDL())
+			err = sur.Blit(ip.TextSur, area.ToSDL())
 			check(err)
 		}
 
@@ -370,6 +372,9 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 			check(err)
 		}
 	}
+
+	DrawCircle(sur, 50, 140, 40, WHITE)
+	DrawLine(sur, 10, 10, 40, 160, 7, RED)
 }
 
 func (ip *Input) Call(we WidgetEvent) {
@@ -395,13 +400,12 @@ func (ip *Input) Call(we WidgetEvent) {
 		addText := []rune(ip.Parent.Event.InputText())
 		ip.currentRune = append(ip.currentRune, addText...)
 		logger.Printf("Input add text : %s, now text is %s", string(addText), string(ip.currentRune))
-
 	case WE_TEXT_EDITING:
-		edi := ip.Parent.Event.EditingText()
-		ip.editingText = edi
+		ip.editingText = ip.Parent.Event.EditingText()
 
 		ip.edisur.Close()
 		ip.edisur = nil
+
 		ip.afterEdit = true
 	case WE_KEY:
 		switch ip.Key() {
@@ -435,10 +439,6 @@ func (ip *Input) CleanUp() {
 
 	ip.Lock()
 	defer ip.Unlock()
-	if ip.sur != nil {
-		ip.sur.Close()
-		ip.sur = nil
-	}
 
 	if ip.edisur != nil {
 		ip.edisur.Close()

@@ -198,7 +198,7 @@ func (kp *KeyPressEvent) Down(wID ID, key uint32) {
 	kp.keys[key] = true
 	kp.Unlock()
 	go func(win *Window) {
-		time.Sleep(4e8)
+		time.Sleep(6e8)
 		for {
 			kp.Lock()
 			if !kp.keys[key] {
@@ -207,7 +207,7 @@ func (kp *KeyPressEvent) Down(wID ID, key uint32) {
 			}
 			kp.Unlock()
 			win.SendEvent(win.focus_child, WE_KEY)
-			time.Sleep(1e8)
+			time.Sleep(3e8)
 		}
 		logger.Printf("Key %c Up", uint8(key))
 	}(GetWindowById(wID))

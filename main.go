@@ -44,7 +44,7 @@ func TestWindow2() *jgui.Window {
 	ip := jgui.NewInput(20).Pack(win, jgui.NewRelRect(5, 0.3, 0.8, 35, jgui.REL_Y | jgui.REL_W))
 	ip.AutoFocus = true
 
-	ip.Font = jgui.NewFont("fonts/Retro Rescued.ttf")
+	ip.Font = jgui.NewFont("fonts/IPix.ttf")
 
 	ip.RegisterEvent(jgui.WE_KEY, func (we jgui.WidgetEvent, wg jgui.Widget) {
 		input := wg.(*jgui.Input)
@@ -53,8 +53,10 @@ func TestWindow2() *jgui.Window {
 			lb.OnEdit()
 			lb.Text  = input.Text
 			lb.EndEdit()
+			lb.Update()
 		}
 	})
+
 
 
 	return win
