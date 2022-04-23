@@ -15,5 +15,5 @@ func init() {
 
 	logger = log.New(loggerFile,  "Jgui logger:", log.Lmsgprefix |  log.Lmicroseconds | log.Lshortfile)
 
-	logger.SetOutput(os.Stdout)
+	// logger.SetOutput(os.Stdout)
 }

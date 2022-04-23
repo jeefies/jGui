@@ -374,7 +374,7 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 	}
 
 	DrawCircle(sur, 50, 140, 40, WHITE)
-	DrawLine(sur, 10, 10, 40, 160, 7, RED)
+	DrawLine(sur, 10, 10, 40, 160, 4, RED)
 }
 
 func (ip *Input) Call(we WidgetEvent) {

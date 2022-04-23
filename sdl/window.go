@@ -37,7 +37,7 @@ const (
 
 // Window's Part
 func CreateWindow(title string, width, height, x_pos, y_pos int) (*Window, error) {
-    return CreateWindowWithFlags(title, width, height, x_pos, y_pos, WIN_SHOWN)
+    return CreateWindowWithFlags(title, width, height, x_pos, y_pos, WIN_SHOWN | WIN_RESIZABLE)
 }
 
 func CreateWindowWithFlags(title string, w, h, x, y int, flags uint32) (win *Window, err error) {
