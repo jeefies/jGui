@@ -152,37 +152,32 @@ double CalcK(int x1, int y1, int x2, int y2) {
 
 // Draw the Line towards right
 Points * pOLineK(double k, int steps) {
-	Points * pt = new_ptlist(steps);
+	printf("k is %lf\n", k);
+
+	Points * pt = new_ptlist(steps + 1);
 	int nk = 0;
 	if (k < 0) {
 		nk = 1;
 		k = -k;
 	}
-	printf("k = %lf, nk = %d\n", k, nk);
 
 	// actual y
 	double d = 0;
 	int x = 0, y = 0;
 
-	for (int i = 0; i < steps; i++) {
-		if (nk == 1)
-			ptl_append(pt, x, -y);
-		else
-			ptl_append(pt, x, y);
-		// printf("x, y : %d, %d\n", pt[i].x, pt[i].y);
-
-		x++;
-		d += k;
-
-		while (d - y > 0.5) {
-			y += 1;
+	for (int i = 0; i <= steps; i++) {
+		do {
 			if (nk == 1)
 				ptl_append(pt, x, -y);
 			else
 				ptl_append(pt, x, y);
-		}
-	}
+			printf("d is %lf add x, y : %d, %d\n", d, x, y);
+		} while (d - y > 0.5 && ++y);
+		// 利用短路与特性实现递增
 
+		x++;
+		d += k;
+	}
 	return pt;
 }
 
@@ -200,7 +195,6 @@ Points * pOLine(int x1, int y1, int x2, int y2, int * ct) {
 		// y1 can be equal to y2; hence k can be equal to 0
 		k = ((double)y1 - (double)y2) / ((double)x1 - (double)x2); // 斜率
 	int steps = x2 - x1;
-	printf("k is %lf\n", k);
 	return pOLineK(k, steps);
 }
 
@@ -217,7 +211,7 @@ void dOLine(SDL_Surface *sur, int x1, int y1, int x2, int y2, Uint32 color) {
 
 	for (int i = 0; i < pt->index; i++) {
 		int x = ptl_i(pt, i).x, y = ptl_i(pt, i).y;
-		printf("at %d %d, x, y = %d %d\n", x1 + x, y1 + y, x, y);
+		printf("at %d %d, add x y = %d %d\n", x1 + x, y1 + y, x, y);
 		pixels[GI(x1 + x, y1 + y)] = color;
 	}
 
@@ -236,15 +230,17 @@ void dLine(SDL_Surface * sur, int x1, int y1, int x2, int y2, int width, Uint32 
 
 
 	double k = CalcK(x1, y1, x2, y2);
-	printf("k %lf, ok %lf\n", k, -1.0/k);
-	Points * pt_starts = pOLineK(-1.0 / k, width);
+	double ok = -1.0 / k;
+	printf("k %lf, ok %lf\n", k, ok);
+	Points * pt_starts = pOLineK(ok, width);
 	int x, y, ex, ey;
 	for (int i = 0; i < pt_starts->index; i++) {
-		printf("left %d %d\n", pt_starts->pts[i].x, pt_starts->pts[i].y);
 		x = x1 + pt_starts->pts[i].x;
 		y = y1 + pt_starts->pts[i].y;
-		ex = y2 + pt_starts->pts[i].x;
+		ex = x2 + pt_starts->pts[i].x;
 		ey = y2 + pt_starts->pts[i].y;
+
+		printf("left %d %d, point at (%d, %d) to (%d, %d)\n", pt_starts->pts[i].x, pt_starts->pts[i].y, x, y, ex, ey);
 
 		dOLine(sur, x, y, ex, ey, color);
 	}

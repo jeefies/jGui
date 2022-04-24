@@ -8,7 +8,7 @@ import (
 
 var LoadedFonts [](*Font)
 
-var DefaultFontFile = "fonts/Source-Han-Sans-Regular.ttf"
+var DefaultFontFile = "fonts/IPix.ttf"
 
 type Font struct {
 	id ID

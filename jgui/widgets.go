@@ -373,7 +373,6 @@ func (ip *Input) Draw(sur *Screen, area * Rect) {
 		}
 	}
 
-	DrawCircle(sur, 50, 140, 40, WHITE)
 	DrawLine(sur, 10, 10, 40, 160, 4, RED)
 }
 
